@@ -77,283 +77,285 @@ HttpRequestObject::~HttpRequestObject()
 JS_CONSTRUCTOR_IMPL(HttpRequestObject)
 {
   HttpRequestObject* pObject = new HttpRequestObject();
-  pObject->Wrap(js_method_arg_self());
-  return js_method_arg_self();
+  pObject->Wrap(js_method_self());
+  js_method_set_return_self();
 }
 
 JS_METHOD_IMPL(HttpRequestObject::setMethod)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  js_method_arg_assert_size_eq(1);
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string value = js_method_arg_as_std_string(0);
   pObject->_request->setMethod(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 JS_METHOD_IMPL(HttpRequestObject::getMethod)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  return JSString(pObject->_request->getMethod());
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_set_return_string(pObject->_request->getMethod());
 }
 
 JS_METHOD_IMPL(HttpRequestObject::setUri)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  js_method_arg_assert_size_eq(1);
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string value = js_method_arg_as_std_string(0);
   pObject->_request->setURI(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpRequestObject::getUri)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  return JSString(pObject->_request->getURI());
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_set_return_string(pObject->_request->getURI());
 }
 
 JS_METHOD_IMPL(HttpRequestObject::setHost)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  js_method_arg_assert_size_eq(1);
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string value = js_method_arg_as_std_string(0);
   pObject->_request->setHost(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpRequestObject::getHost)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  return JSString(pObject->_request->getHost());
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_set_return_string(pObject->_request->getHost());
 }
 
 JS_METHOD_IMPL(HttpRequestObject::setCookies)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  js_method_arg_assert_size_eq(1);
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_object(0);
   
   JSLocalObjectHandle obj = js_method_arg_as_object(0);
-  JSLocalArrayHandle properties = obj->GetPropertyNames();
+  JSLocalArrayHandle properties = obj->GetPropertyNames(js_method_context()).ToLocalChecked();
   Cookies cookies;
   for(uint32_t i = 0; i < properties->Length(); i++)
   {
-    JSLocalValueHandle name = properties->Get(i);
-    JSLocalValueHandle value = obj->Get(name);
-    cookies.add(js_handle_as_std_string(name), js_handle_as_std_string(value));
+    JSLocalValueHandle name = properties->Get(js_method_context(),i).ToLocalChecked();
+    JSLocalValueHandle value = obj->Get(js_method_context(),name).ToLocalChecked();
+    cookies.add(js_method_handle_as_std_string(name), js_method_handle_as_std_string(value));
   }
   pObject->_request->setCookies(cookies);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpRequestObject::getCookies)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
   Cookies cookies;
   pObject->_request->getCookies(cookies);
   if (cookies.empty())
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  JSLocalObjectHandle obj = JSObject();
+  JSLocalObjectHandle obj = js_method_object();
   for (Cookies::ConstIterator iter = cookies.begin(); iter != cookies.end(); iter++)
   {
-    obj->Set(JSLiteral(iter->first.c_str()), JSString(iter->second));
+    obj->Set(js_method_context(),js_method_string(iter->first.c_str()), js_method_string(iter->second));
   }
-  return obj;
+  js_method_set_return_handle(obj);
 }
 
 JS_METHOD_IMPL(HttpRequestObject::hasCredentials)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  return JSBoolean(pObject->_request->hasCredentials());
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_set_return_boolean(pObject->_request->hasCredentials());
 }
 
 JS_METHOD_IMPL(HttpRequestObject::getCredentials)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
   if (!pObject->_request->hasCredentials())
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  JSLocalObjectHandle obj = JSObject();
+  JSLocalObjectHandle obj = js_method_object();
   
   std::string scheme;
   std::string authInfo;
   pObject->_request->getCredentials(scheme, authInfo);
   
-  obj->Set(JSLiteral("scheme"), JSString(scheme));
-  obj->Set(JSLiteral("authInfo"), JSString(authInfo));
+  obj->Set(js_method_context(),js_method_string("scheme"), js_method_string(scheme));
+  obj->Set(js_method_context(),js_method_string("authInfo"), js_method_string(authInfo));
   
-  return obj;
+  js_method_set_return_handle(obj);
 }
 
 JS_METHOD_IMPL(HttpRequestObject::setCredentials)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  js_method_arg_assert_size_eq(2);
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_string(0);
   js_method_arg_assert_string(1);
   
   std::string scheme = js_method_arg_as_std_string(0);
   std::string authInfo = js_method_arg_as_std_string(1);
   pObject->_request->setCredentials(scheme, authInfo);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpRequestObject::setVersion)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  js_method_arg_assert_size_eq(1);
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string value = js_method_arg_as_std_string(0);
   pObject->_request->setVersion(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpRequestObject::getVersion)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  return JSString(pObject->_request->getVersion());
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_set_return_string(pObject->_request->getVersion());
 }
 
 JS_METHOD_IMPL(HttpRequestObject::setContentLength)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  js_method_arg_declare_uint32(contentLength, 0);
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_declare_uint32(contentLength, 0);
   pObject->_request->setContentLength(contentLength);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpRequestObject::getContentLength)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  return JSUInt32(pObject->_request->getContentLength());
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_set_return_handle(js_method_uint32(pObject->_request->getContentLength()));
 }
 
 JS_METHOD_IMPL(HttpRequestObject::setTransferEncoding)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  js_method_arg_assert_size_eq(1);
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string value = js_method_arg_as_std_string(0);
   pObject->_request->setTransferEncoding(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpRequestObject::getTransferEncoding)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  return JSString(pObject->_request->getTransferEncoding());
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_set_return_string(pObject->_request->getTransferEncoding());
 }
 
 JS_METHOD_IMPL(HttpRequestObject::setChunkedTransferEncoding)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  js_method_arg_declare_bool(flag, 0);
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_declare_bool(flag, 0);
   pObject->_request->setChunkedTransferEncoding(flag);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpRequestObject::getChunkedTransferEncoding)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  return JSBoolean(pObject->_request->getChunkedTransferEncoding());
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_set_return_boolean(pObject->_request->getChunkedTransferEncoding());
 }
 
 JS_METHOD_IMPL(HttpRequestObject::setContentType)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  js_method_arg_assert_size_eq(1);
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string value = js_method_arg_as_std_string(0);
   pObject->_request->setContentType(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpRequestObject::getContentType)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  return JSString(pObject->_request->getContentType());
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_set_return_string(pObject->_request->getContentType());
 }
 
 JS_METHOD_IMPL(HttpRequestObject::set)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
   
-  js_method_arg_declare_string(name, 0);
-  js_method_arg_declare_string(value, 1);
+  js_method_declare_string(name, 0);
+  js_method_declare_string(value, 1);
   
   pObject->_request->add(name, value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpRequestObject::get)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
   
-  js_method_arg_declare_string(name, 0);
-  js_method_arg_declare_string(defVal, 1);
+  js_method_declare_string(name, 0);
+  js_method_declare_string(defVal, 1);
   
-  return JSString(pObject->_request->get(name, defVal));
+  js_method_set_return_string(pObject->_request->get(name, defVal));
 }
 
 JS_METHOD_IMPL(HttpRequestObject::setKeepAlive)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  js_method_arg_declare_bool(flag, 0);
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_declare_bool(flag, 0);
   pObject->_request->setKeepAlive(flag);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpRequestObject::getKeepAlive)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
-  return JSBoolean(pObject->_request->getKeepAlive());
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  js_method_set_return_boolean(pObject->_request->getKeepAlive());
 }
 
 JS_METHOD_IMPL(HttpRequestObject::reset)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
   delete pObject->_request;
   pObject->_request = new HttpRequestObject::Request();
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpRequestObject::dispose)
 {
-  HttpRequestObject* pObject = js_method_arg_unwrap_self(HttpRequestObject);
-  js_assert(pObject && pObject->_request, "HTTP Request has been disposed");
+  HttpRequestObject* pObject = js_method_unwrap_self(HttpRequestObject);
+  js_method_assert(pObject && pObject->_request, "HTTP Request has been disposed");
   delete pObject->_request;
   pObject->_request = 0;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 

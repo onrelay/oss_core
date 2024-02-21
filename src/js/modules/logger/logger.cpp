@@ -22,98 +22,103 @@
 #include "OSS/UTL/CoreUtils.h"
 
 
-static v8::Handle<v8::Value> __log(const v8::Arguments& args)
+JS_METHOD_IMPL(__log)
 {
-  if (args.Length() < 2 || !args[0]->IsInt32() || !args[1]->IsString())
+  if (_args_.Length() < 2 || !_args_[0]->IsInt32() || !_args_[1]->IsString())
   {
-    return v8::Undefined();
+    js_method_set_return_undefined();
+    return;
   }
-  v8::HandleScope scope;
-  v8::String::Utf8Value arg1(args[1]);
-  OSS::log(*arg1, (OSS::LogPriority)args[0]->ToInt32()->Value());
-  return v8::Undefined();
+  js_method_enter_scope();
+
+  std::string arg1 = *v8::String::Utf8Value(js_method_isolate(),_args_[1]);
+
+  OSS::log(arg1, (OSS::LogPriority)_args_[0]->Int32Value(js_method_context()).ToChecked());
+
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> __log_init(const v8::Arguments& args)
+JS_METHOD_IMPL(__log_init)
 {
-  if (args.Length() < 1 && !args[0]->IsString())
+  if (_args_.Length() < 1 && !_args_[0]->IsString())
   {
-    return v8::Undefined();
+    js_method_set_return_undefined();
+    return;  
   }
   
-  std::string path;
   OSS::LogPriority logLevel = OSS::PRIO_INFORMATION;
   std::string format = "%h-%M-%S.%i: %t";
   bool compress = true;
   int purgeCount = 7;
   
-  v8::HandleScope scope;
+  js_method_enter_scope();
   
-  path = *v8::String::Utf8Value(args[0]);
-  if (args.Length() >= 2 && args[1]->IsInt32())
+  std::string path = *v8::String::Utf8Value(js_method_isolate(),_args_[0]);
+  if (_args_.Length() >= 2 && _args_[1]->IsInt32())
   {
-    logLevel = (OSS::LogPriority)args[1]->Int32Value();
+    logLevel = (OSS::LogPriority)_args_[1]->Int32Value(js_method_context()).ToChecked();
   }
   
-  if (args.Length() >= 3 && args[2]->IsString())
+  if (_args_.Length() >= 3 && _args_[2]->IsString())
   {
-    format = *v8::String::Utf8Value(args[2]);
+    format = *v8::String::Utf8Value(js_method_isolate(),_args_[2]);
   }
   
-  if (args.Length() >= 4 && args[3]->IsBoolean())
+  if (_args_.Length() >= 4 && _args_[3]->IsBoolean())
   {
-    compress = args[3]->BooleanValue();
+    compress = _args_[3]->BooleanValue(js_method_isolate());
   }
   
-  if (args.Length() >= 5 && args[4]->IsInt32())
+  if (_args_.Length() >= 5 && _args_[4]->IsInt32())
   {
-    purgeCount = args[4]->Int32Value();
+    purgeCount = _args_[4]->Int32Value(js_method_context()).ToChecked();
   }
   
   OSS::logger_init(path, logLevel, format, compress ? "true" : "false", OSS::string_from_number<int>(purgeCount));
 
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> __log_level_get(v8::Local<v8::String> property, const v8::AccessorInfo& info) 
+JS_ACCESSOR_GETTER_IMPL(__log_level_get) 
 {
-  return v8::Integer::New(OSS::log_get_level());
+  js_method_set_return_integer(OSS::log_get_level());
 }
 
-void __log_level_set(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& info)
+JS_ACCESSOR_SETTER_IMPL(__log_level_set) 
 {
-  OSS::log_reset_level((OSS::LogPriority)value->Int32Value());
+  OSS::log_reset_level((OSS::LogPriority)value->Int32Value(js_method_context()).ToChecked());
 }
 
-static v8::Handle<v8::Value> init_exports(const v8::Arguments& args)
+JS_EXPORTS_INIT()
 {
-  v8::HandleScope scope;
-  v8::Persistent<v8::Object> exports = v8::Persistent<v8::Object>::New(v8::Object::New());
   
   //
   // Methods
   //
-  exports->Set(v8::String::New("log"), v8::FunctionTemplate::New(__log)->GetFunction());
-  exports->Set(v8::String::New("init"), v8::FunctionTemplate::New(__log_init)->GetFunction());
-  
+
+  js_export_method("log", __log );
+  js_export_method("init", __log_init );
+
+
   //
   // Mutable Properties
   //
-  exports->SetAccessor(v8::String::New("level"), __log_level_get, __log_level_set);
+
+  js_export_accessor("level", __log_level_get, __log_level_set);
 
   //
   // Constants
   //
-  exports->Set(v8::String::New("NOTICE"), v8::Int32::New(OSS::PRIO_NOTICE), v8::ReadOnly);
-  exports->Set(v8::String::New("INFO"), v8::Int32::New(OSS::PRIO_INFORMATION), v8::ReadOnly);
-  exports->Set(v8::String::New("DEBUG"), v8::Int32::New(OSS::PRIO_DEBUG), v8::ReadOnly);
-  exports->Set(v8::String::New("TRACE"), v8::Int32::New(OSS::PRIO_TRACE), v8::ReadOnly);
-  exports->Set(v8::String::New("WARNING"), v8::Int32::New(OSS::PRIO_WARNING), v8::ReadOnly);
-  exports->Set(v8::String::New("ERROR"), v8::Int32::New(OSS::PRIO_ERROR), v8::ReadOnly);
-  exports->Set(v8::String::New("CRITICAL"), v8::Int32::New(OSS::PRIO_CRITICAL), v8::ReadOnly);
-  exports->Set(v8::String::New("FATAL"), v8::Int32::New(OSS::PRIO_FATAL), v8::ReadOnly);
+  js_export_int32("NOTICE",OSS::PRIO_NOTICE);
+  js_export_int32("INFO",OSS::PRIO_INFORMATION);
+  js_export_int32("DEBUG",OSS::PRIO_DEBUG);
+  js_export_int32("TRACE",OSS::PRIO_TRACE);
+  js_export_int32("WARNING",OSS::PRIO_WARNING);
+  js_export_int32("ERROR",OSS::PRIO_ERROR);
+  js_export_int32("CRITICAL",OSS::PRIO_CRITICAL);
+  js_export_int32("FATAL",OSS::PRIO_FATAL);
   
-  return exports;
+  js_export_finalize();
 }
 
 JS_REGISTER_MODULE(Logger);

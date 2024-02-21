@@ -55,9 +55,9 @@ public:
   //
   // Helpers
   //
-  static JSValueHandle createNew(uint32_t size);
-  static bool isBuffer(JSValueHandle value);
-  static JSValueHandle  isBufferObject(JSArguments& args);
+  static JSValueHandle createNew( v8::Isolate* isolate, uint32_t size);
+  static bool isBuffer(v8::Isolate* isolate, JSValueHandle value);
+  JS_METHOD_DECLARE(isBufferObject);
   
   ByteArray& buffer();
 private:
@@ -77,12 +77,12 @@ inline BufferObject::ByteArray& BufferObject::buffer()
 }
 
 typedef std::vector<unsigned char> ByteArray;
-inline bool js_byte_array_to_int_array(ByteArray& input, v8::Handle<v8::Array>& output, std::size_t sz)
+inline bool js_byte_array_to_int_array(v8::Isolate* isolate, ByteArray& input, v8::Handle<v8::Array>& output, std::size_t sz)
 {
   uint32_t i = 0;
   for (ByteArray::iterator iter = input.begin(); iter != input.end(); iter++)
   {
-    output->Set(i++, v8::Int32::New(*iter));
+    output->Set(isolate->GetCurrentContext(), i++, v8::Int32::New(isolate,*iter));
     if (sz && i >= sz)
     {
       break;
@@ -91,7 +91,7 @@ inline bool js_byte_array_to_int_array(ByteArray& input, v8::Handle<v8::Array>& 
   return output->Length() > 0;
 }
 
-inline  bool js_int_array_to_byte_array(v8::Handle<v8::Array>& input, ByteArray& output, bool resize = false)
+inline  bool js_int_array_to_byte_array(v8::Isolate* isolate, v8::Handle<v8::Array>& input, ByteArray& output, bool resize = false)
 {
   if (resize)
   {
@@ -104,7 +104,7 @@ inline  bool js_int_array_to_byte_array(v8::Handle<v8::Array>& input, ByteArray&
   }
   for(uint32_t i = 0; i < input->Length(); i++)
   {
-    uint32_t val = input->Get(i)->ToInt32()->Value();
+    uint32_t val = input->Get(isolate->GetCurrentContext(),i).ToLocalChecked()->ToInt32(isolate->GetCurrentContext()).ToLocalChecked()->Value();
     if (val >= 256)
     {
       return false;

@@ -24,11 +24,8 @@
 #include <unistd.h>
 #include <signal.h>
 
-static v8::Handle<v8::Value> init_exports(const v8::Arguments& args)
-{
-  v8::HandleScope scope; 
-  v8::Persistent<v8::Object> exports = v8::Persistent<v8::Object>::New(v8::Object::New());
-  
+JS_EXPORTS_INIT()
+{  
   //
   // Mutable Properties
   //
@@ -37,64 +34,64 @@ static v8::Handle<v8::Value> init_exports(const v8::Arguments& args)
   // Standard fcntl system constants
   //
 #ifdef __USE_XOPEN2K8
-  CONST_EXPORT(O_DIRECTORY);    /* Must be a directory.	 */
-  CONST_EXPORT(O_NOFOLLOW);     /* Do not follow links.	 */
-  CONST_EXPORT(O_CLOEXEC);      /* Set close_on_exec.  */
+  js_export_const(O_DIRECTORY);    /* Must be a directory.	 */
+  js_export_const(O_NOFOLLOW);     /* Do not follow links.	 */
+  js_export_const(O_CLOEXEC);      /* Set close_on_exec.  */
 #endif
 
 #ifdef __USE_GNU
-  CONST_EXPORT(O_DIRECT);       /* Direct disk access.	*/
-  CONST_EXPORT(O_NOATIME);      /* Do not set atime.  */
-  CONST_EXPORT(O_PATH);         /* Resolve pathname but do not open file.  */
+  js_export_const(O_DIRECT);       /* Direct disk access.	*/
+  js_export_const(O_NOATIME);      /* Do not set atime.  */
+  js_export_const(O_PATH);         /* Resolve pathname but do not open file.  */
 #ifdef O_TMPFILE
-  CONST_EXPORT(O_TMPFILE);      /* Atomically create nameless file.  */
+  js_export_const(O_TMPFILE);      /* Atomically create nameless file.  */
 #endif
 #endif
   
-  CONST_EXPORT(STDOUT_FILENO);
-  CONST_EXPORT(STDIN_FILENO);
-  CONST_EXPORT(STDERR_FILENO);
+  js_export_const(STDOUT_FILENO);
+  js_export_const(STDIN_FILENO);
+  js_export_const(STDERR_FILENO);
   
   //
   // Signals
   //
-  CONST_EXPORT(SIGHUP);   /* Hangup (POSIX).  */
-  CONST_EXPORT(SIGINT);   /* Interrupt (ANSI).  */
-  CONST_EXPORT(SIGQUIT);  /* Quit (POSIX).  */
-  CONST_EXPORT(SIGILL);   /* Illegal instruction (ANSI).  */
-  CONST_EXPORT(SIGTRAP);  /* Trace trap (POSIX).  */
-  CONST_EXPORT(SIGABRT);  /* Abort (ANSI).  */
-  CONST_EXPORT(SIGIOT);   /* IOT trap (4.2 BSD).  */
-  CONST_EXPORT(SIGBUS);   /* BUS error (4.2 BSD).  */
-  CONST_EXPORT(SIGFPE);   /* Floating-point exception (ANSI).  */
-  CONST_EXPORT(SIGKILL);  /* Kill, unblockable (POSIX).  */
-  CONST_EXPORT(SIGUSR1);  /* User-defined signal 1 (POSIX).  */
-  CONST_EXPORT(SIGSEGV);  /* Segmentation violation (ANSI).  */
-  CONST_EXPORT(SIGUSR2);  /* User-defined signal 2 (POSIX).  */
-  CONST_EXPORT(SIGPIPE);  /* Broken pipe (POSIX).  */
-  CONST_EXPORT(SIGALRM);  /* Alarm clock (POSIX).  */
-  CONST_EXPORT(SIGCHLD);  /* Child status has changed (POSIX).  */
-  CONST_EXPORT(SIGCONT);  /* Continue (POSIX).  */
-  CONST_EXPORT(SIGSTOP);  /* Stop, unblockable (POSIX).  */
-  CONST_EXPORT(SIGTSTP);  /* Keyboard stop (POSIX).  */
-  CONST_EXPORT(SIGTTIN);  /* Background read from tty (POSIX).  */
-  CONST_EXPORT(SIGTTOU);  /* Background write to tty (POSIX).  */
-  CONST_EXPORT(SIGURG);   /* Urgent condition on socket (4.2 BSD).  */
-  CONST_EXPORT(SIGXCPU);  /* CPU limit exceeded (4.2 BSD).  */
-  CONST_EXPORT(SIGXFSZ);  /* File size limit exceeded (4.2 BSD).  */
-  CONST_EXPORT(SIGVTALRM);/* Virtual alarm clock (4.2 BSD).  */
-  CONST_EXPORT(SIGPROF);  /* Profiling alarm clock (4.2 BSD).  */
-  CONST_EXPORT(SIGSYS);   /* Bad system call.  */
-  CONST_EXPORT(SIGTERM);  /* Termination (ANSI).  */
-  CONST_EXPORT(SIGWINCH); /* Window size change (4.3 BSD, Sun).  */
-  CONST_EXPORT(SIGIO);    /* I/O now possible (4.2 BSD).  */
+  js_export_const(SIGHUP);   /* Hangup (POSIX).  */
+  js_export_const(SIGINT);   /* Interrupt (ANSI).  */
+  js_export_const(SIGQUIT);  /* Quit (POSIX).  */
+  js_export_const(SIGILL);   /* Illegal instruction (ANSI).  */
+  js_export_const(SIGTRAP);  /* Trace trap (POSIX).  */
+  js_export_const(SIGABRT);  /* Abort (ANSI).  */
+  js_export_const(SIGIOT);   /* IOT trap (4.2 BSD).  */
+  js_export_const(SIGBUS);   /* BUS error (4.2 BSD).  */
+  js_export_const(SIGFPE);   /* Floating-point exception (ANSI).  */
+  js_export_const(SIGKILL);  /* Kill, unblockable (POSIX).  */
+  js_export_const(SIGUSR1);  /* User-defined signal 1 (POSIX).  */
+  js_export_const(SIGSEGV);  /* Segmentation violation (ANSI).  */
+  js_export_const(SIGUSR2);  /* User-defined signal 2 (POSIX).  */
+  js_export_const(SIGPIPE);  /* Broken pipe (POSIX).  */
+  js_export_const(SIGALRM);  /* Alarm clock (POSIX).  */
+  js_export_const(SIGCHLD);  /* Child status has changed (POSIX).  */
+  js_export_const(SIGCONT);  /* Continue (POSIX).  */
+  js_export_const(SIGSTOP);  /* Stop, unblockable (POSIX).  */
+  js_export_const(SIGTSTP);  /* Keyboard stop (POSIX).  */
+  js_export_const(SIGTTIN);  /* Background read from tty (POSIX).  */
+  js_export_const(SIGTTOU);  /* Background write to tty (POSIX).  */
+  js_export_const(SIGURG);   /* Urgent condition on socket (4.2 BSD).  */
+  js_export_const(SIGXCPU);  /* CPU limit exceeded (4.2 BSD).  */
+  js_export_const(SIGXFSZ);  /* File size limit exceeded (4.2 BSD).  */
+  js_export_const(SIGVTALRM);/* Virtual alarm clock (4.2 BSD).  */
+  js_export_const(SIGPROF);  /* Profiling alarm clock (4.2 BSD).  */
+  js_export_const(SIGSYS);   /* Bad system call.  */
+  js_export_const(SIGTERM);  /* Termination (ANSI).  */
+  js_export_const(SIGWINCH); /* Window size change (4.3 BSD, Sun).  */
+  js_export_const(SIGIO);    /* I/O now possible (4.2 BSD).  */
 #if !OSS_PLATFORM_MAC_OS_X
-  CONST_EXPORT(SIGSTKFLT);/* Stack fault.  */
-  CONST_EXPORT(SIGPWR);   /* Power failure restart (System V).  */
-  CONST_EXPORT(SIGPOLL);  /* Pollable event occurred (System V).  */
-  CONST_EXPORT(SIGCLD);   /* Same as SIGCHLD (System V).  */
+  js_export_const(SIGSTKFLT);/* Stack fault.  */
+  js_export_const(SIGPWR);   /* Power failure restart (System V).  */
+  js_export_const(SIGPOLL);  /* Pollable event occurred (System V).  */
+  js_export_const(SIGCLD);   /* Same as SIGCHLD (System V).  */
 #endif
-  return exports;
+  js_export_finalize();
 }
 
 JS_REGISTER_MODULE(Const);

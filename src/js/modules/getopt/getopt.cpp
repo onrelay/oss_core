@@ -9,59 +9,61 @@ static char** gArgv = 0;
 
 JS_METHOD_IMPL(__getopt)
 {
-  js_method_arg_declare_string(optstring, 0);
-  return v8::Uint32::New(::getopt(gArgc, gArgv, optstring.c_str()));
+  js_method_declare_string(optstring, 0);
+  js_method_set_return_handle(js_method_uint32(::getopt(gArgc, gArgv, optstring.c_str())));
 }
 
-static v8::Handle<v8::Value> __optind_get(v8::Local<v8::String> property, const v8::AccessorInfo& info) 
+JS_ACCESSOR_GETTER_IMPL(__optind_get) 
 {
-  return v8::Integer::New(optind);
+  js_method_set_return_integer(optind);
 }
 
-void __optind_set(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& info)
+JS_ACCESSOR_SETTER_IMPL(__optind_set)
 {
-  optind = value->Int32Value();
+  optind = value->Int32Value(js_method_context()).ToChecked();
 }
 
-static v8::Handle<v8::Value> __opterr_get(v8::Local<v8::String> property, const v8::AccessorInfo& info) 
+JS_ACCESSOR_GETTER_IMPL(__opterr_get) 
 {
-  return v8::Integer::New(opterr);
+  js_method_set_return_integer(opterr);
 }
 
-void __opterr_set(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& info)
+JS_ACCESSOR_SETTER_IMPL(__opterr_set)
 {
-  opterr = value->Int32Value();
+  opterr = value->Int32Value(js_method_context()).ToChecked();
 }
 
-static v8::Handle<v8::Value> __optarg_get(v8::Local<v8::String> property, const v8::AccessorInfo& info) 
+JS_ACCESSOR_GETTER_IMPL(__optarg_get) 
 {
-  return v8::String::New(optarg);
+  js_method_set_return_string(optarg);
 }
 
-static v8::Handle<v8::Value> __optopt_get(v8::Local<v8::String> property, const v8::AccessorInfo& info) 
+JS_ACCESSOR_GETTER_IMPL(__optopt_get)
 {
-  return v8::Uint32::New(optopt);
+  js_method_set_return_integer(optopt);
 }
 
-static v8::Handle<v8::Value> init_exports(const v8::Arguments& args)
-{
-  v8::Local<v8::Object> exports = v8::Local<v8::Object>::New(v8::Object::New());
-  
+JS_EXPORTS_INIT()
+{  
   OSS::OSS_argv(&gArgc, &gArgv);
   optind = 2;
-  exports->Set(v8::String::New("argc"), v8::Uint32::New(gArgc));
-  v8::Local<v8::Array> argv = v8::Array::New(gArgc);
+
+  js_export_uint32( "argc", gArgc);
+
+  JSLocalArrayHandle argv = js_method_array(gArgc);
   for (int i = 0; i < gArgc; i++)
   {
-    argv->Set(i, v8::String::New(gArgv[i]));
+    argv->Set( js_method_context(), i, js_method_string(gArgv[i])  );
   }
-  exports->Set(v8::String::New("argv"), argv);
-  exports->Set(v8::String::New("getopt"), v8::FunctionTemplate::New(__getopt)->GetFunction());
-  exports->SetAccessor(v8::String::New("opterr"), __opterr_get, __opterr_set);
-  exports->SetAccessor(v8::String::New("optind"), __optind_get, __optind_set);
-  exports->SetAccessor(v8::String::New("optarg"), __optarg_get, 0);
-  exports->SetAccessor(v8::String::New("optopt"), __optopt_get, 0);
-  return exports;
+
+  js_export_value( "argv", argv);
+  js_export_method("getopt", __getopt );
+  js_export_accessor("opterr", __opterr_get, __opterr_set);
+  js_export_accessor("optind", __optind_get, __optind_set);
+  js_export_accessor("optarg", __optarg_get, NULL);
+  js_export_accessor("optopt", __optopt_get, NULL);
+
+  js_export_finalize();
 }
 
 JS_REGISTER_MODULE(GetOpt);

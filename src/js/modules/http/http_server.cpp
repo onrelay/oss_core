@@ -72,15 +72,15 @@ JS_CLASS_INTERFACE(HttpServerObject, "HttpServer")
 JS_CONSTRUCTOR_IMPL(HttpServerObject)
 {
   bool useHttps = false;
-  if (js_method_arg_length() > 0)
+  if (js_method_args_length() > 0)
   {
-    js_method_arg_declare_bool(isSecure, 0);
+    js_method_declare_bool(isSecure, 0);
     useHttps = isSecure;
   }
   
   HttpServerObject* pServer = new HttpServerObject(useHttps);
-  pServer->Wrap(js_method_arg_self());
-  return js_method_arg_self();
+  pServer->Wrap(js_method_self());
+  js_method_set_return_self();
 }
 
 HttpServerObject::HttpServerObject(bool secure) :
@@ -100,7 +100,7 @@ HttpServerObject::~HttpServerObject()
 {
   if (!_requestHandler.IsEmpty())
   {
-    _requestHandler.Dispose();
+    _requestHandler.Reset();
   }
   delete _pHttpServer;
   delete _pSocket;
@@ -245,57 +245,58 @@ void HttpServerObject::handleRequest(HTTPServerRequest& request, HTTPServerRespo
 
 JS_METHOD_IMPL(HttpServerObject::_sendResponse)
 {
-  js_method_arg_declare_self(HttpServerObject, self);
-  js_method_arg_declare_uint32(responseId, 0);
-  js_method_arg_declare_object(response, 1);
+  js_method_declare_self(HttpServerObject, self);
+  js_method_declare_uint32(responseId, 0);
+  js_method_declare_object(response, 1);
 
   HTTPServerResponse* pResponse = self->findResponse(responseId);
   if (!pResponse)
   {
-    return JSBoolean(false);
+    js_method_set_return_false();
+    return;
   }
   
-  JSLocalValueHandle status = response->Get(JSLiteral("status"));
-  JSLocalValueHandle reason = response->Get(JSLiteral("reason"));
-  JSLocalValueHandle contentType = response->Get(JSLiteral("contentType"));
-  JSLocalValueHandle contentLength = response->Get(JSLiteral("contentLength"));
-  JSLocalValueHandle transferEncoding = response->Get(JSLiteral("transferEncoding"));
-  JSLocalValueHandle chunkedTransferEncoding = response->Get(JSLiteral("chunkedTransferEncoding"));
-  JSLocalValueHandle keepAlive = response->Get(JSLiteral("keepAlive"));
+  JSMaybeLocalValueHandle status = response->Get(js_method_context(),js_method_string("status"));
+  JSMaybeLocalValueHandle reason = response->Get(js_method_context(),js_method_string("reason"));
+  JSMaybeLocalValueHandle contentType = response->Get(js_method_context(),js_method_string("contentType"));
+  JSMaybeLocalValueHandle contentLength = response->Get(js_method_context(),js_method_string("contentLength"));
+  JSMaybeLocalValueHandle transferEncoding = response->Get(js_method_context(),js_method_string("transferEncoding"));
+  JSMaybeLocalValueHandle chunkedTransferEncoding = response->Get(js_method_context(),js_method_string("chunkedTransferEncoding"));
+  JSMaybeLocalValueHandle keepAlive = response->Get(js_method_context(),js_method_string("keepAlive"));
   
-  if (!status.IsEmpty() && status->IsUint32())
+  if (!status.IsEmpty() && status.ToLocalChecked()->IsUint32())
   {
-    pResponse->setStatus((HTTPStatus)status->ToUint32()->Value());
+    pResponse->setStatus((HTTPStatus)status.ToLocalChecked()->Uint32Value(js_method_context()).ToChecked());
   }
   
-  if (!reason.IsEmpty() && reason->IsString())
+  if (!reason.IsEmpty() && reason.ToLocalChecked()->IsString())
   {
-    pResponse->setReason(js_handle_as_std_string(reason));
+    pResponse->setReason(js_method_handle_as_std_string(reason.ToLocalChecked()));
   }
   
-  if (!contentType.IsEmpty() && contentType->IsString())
+  if (!contentType.IsEmpty() && contentType.ToLocalChecked()->IsString())
   {
-    pResponse->setContentType(js_handle_as_std_string(contentType));
+    pResponse->setContentType(js_method_handle_as_std_string(contentType.ToLocalChecked()));
   }
   
-  if (!contentLength.IsEmpty() && contentLength->IsUint32())
+  if (!contentLength.IsEmpty() && contentLength.ToLocalChecked()->IsUint32())
   {
-    pResponse->setContentLength(contentLength->ToInt32()->Value());
+    pResponse->setContentLength(contentLength.ToLocalChecked()->Int32Value(js_method_context()).ToChecked());
   }
   
-  if (!transferEncoding.IsEmpty() && transferEncoding->IsString())
+  if (!transferEncoding.IsEmpty() && transferEncoding.ToLocalChecked()->IsString())
   {
-    pResponse->setTransferEncoding(js_handle_as_std_string(transferEncoding));
+    pResponse->setTransferEncoding(js_method_handle_as_std_string(transferEncoding.ToLocalChecked()));
   }
   
-  if (!chunkedTransferEncoding.IsEmpty() && chunkedTransferEncoding->IsBoolean())
+  if (!chunkedTransferEncoding.IsEmpty() && chunkedTransferEncoding.ToLocalChecked()->IsBoolean())
   {
-    pResponse->setChunkedTransferEncoding(chunkedTransferEncoding->ToBoolean()->Value());
+    pResponse->setChunkedTransferEncoding(chunkedTransferEncoding.ToLocalChecked()->ToBoolean(js_method_isolate())->Value());
   }
   
-  if (!keepAlive.IsEmpty() && keepAlive->IsBoolean())
+  if (!keepAlive.IsEmpty() && keepAlive.ToLocalChecked()->IsBoolean())
   {
-    pResponse->setKeepAlive(keepAlive->ToBoolean()->Value());
+    pResponse->setKeepAlive(keepAlive.ToLocalChecked()->ToBoolean(js_method_isolate())->Value());
   }
   
   
@@ -308,63 +309,63 @@ JS_METHOD_IMPL(HttpServerObject::_sendResponse)
   
   self->removeResponse(responseId);
   
-  return JSBoolean(ostrm->good());
+  js_method_set_return_boolean(ostrm->good());
 }
 
 JS_METHOD_IMPL(HttpServerObject::setMaxQueued)
 {
-  js_method_arg_declare_self(HttpServerObject, self);
-  js_method_arg_declare_uint32(value, 0);
+  js_method_declare_self(HttpServerObject, self);
+  js_method_declare_uint32(value, 0);
   self->_pParams->setMaxQueued(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpServerObject::setMaxThreads)
 {
-  js_method_arg_declare_self(HttpServerObject, self);
-  js_method_arg_declare_uint32(value, 0);
+  js_method_declare_self(HttpServerObject, self);
+  js_method_declare_uint32(value, 0);
   self->_pParams->setMaxThreads(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpServerObject::_setRpcId)
 {
-  js_method_arg_declare_self(HttpServerObject, self);
-  js_method_arg_declare_string(rpcId, 0);
+  js_method_declare_self(HttpServerObject, self);
+  js_method_declare_string(rpcId, 0);
   self->_rpcId = rpcId;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpServerObject::_read)
 {
-  js_method_arg_declare_self(HttpServerObject, self);
-  js_method_arg_declare_int32(streamId, 0);
-  js_method_arg_declare_external_object(BufferObject, buf, 1);
-  js_method_arg_declare_uint32(size, 2);
-  return JSUInt32(self->read(streamId, (char*)buf->buffer().data(), size));
+  js_method_declare_self(HttpServerObject, self);
+  js_method_declare_int32(streamId, 0);
+  js_method_declare_external_object(BufferObject, buf, 1);
+  js_method_declare_uint32(size, 2);
+  js_method_set_return_handle(js_method_uint32(self->read(streamId, (char*)buf->buffer().data(), size)));
 }
 
 JS_METHOD_IMPL(HttpServerObject::_write)
 {
-  js_method_arg_declare_self(HttpServerObject, self);
-  js_method_arg_declare_int32(streamId, 0);
-  js_method_arg_declare_external_object(BufferObject, buf, 1);
-  js_method_arg_declare_uint32(size, 2);
-  return JSUInt32(self->write(streamId, (char*)buf->buffer().data(), size));
+  js_method_declare_self(HttpServerObject, self);
+  js_method_declare_int32(streamId, 0);
+  js_method_declare_external_object(BufferObject, buf, 1);
+  js_method_declare_uint32(size, 2);
+  js_method_set_return_handle(js_method_uint32(self->write(streamId, (char*)buf->buffer().data(), size)));
 }
 
 JS_METHOD_IMPL(HttpServerObject::_listen)
 {
-  js_method_arg_declare_self(HttpServerObject, self);
+  js_method_declare_self(HttpServerObject, self);
   
   if (self->_pSocket)
   {
-    js_throw("HTTP Server already running");
+    js_method_throw("HTTP Server already running");
   }
   
-  js_method_arg_declare_string(ip, 0);
-  js_method_arg_declare_uint32(port, 1);
-  js_method_arg_declare_function(callback, 2);
+  js_method_declare_string(ip, 0);
+  js_method_declare_uint32(port, 1);
+  js_method_declare_function(callback, 2);
   
   try
   {
@@ -400,12 +401,12 @@ JS_METHOD_IMPL(HttpServerObject::_listen)
     delete self->_pHttpServer;
     self->_pHttpServer = 0;
     JSArgumentVector jsonArg;
-    JSValueHandle error = JSString(e.displayText());
+    JSValueHandle error = js_method_string(e.displayText());
     jsonArg.push_back(error);
     js_function_call(callback, jsonArg.data(), jsonArg.size());
   }
   
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_EXPORTS_INIT()

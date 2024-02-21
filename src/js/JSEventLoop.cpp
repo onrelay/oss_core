@@ -83,7 +83,7 @@ void JSEventLoop::processEvents()
       _fdManager.appendDescriptors(descriptors);
     }
     int ret = ::poll(descriptors.data(), descriptors.size(), 100);
-    v8::HandleScope scope;
+    v8::HandleScope scope( pIsolate->getV8Isolate() );
     if (ret == -1 || _isTerminated)
     {
       break;
@@ -98,10 +98,11 @@ void JSEventLoop::processEvents()
         OSS::UInt64 now = OSS::getTime();
         if (now - lastGarbageCollectionTime > _garbageCollectionFrequency * 1000)
         {
-          v8::V8::LowMemoryNotification();
+           pIsolate->getV8Isolate()->LowMemoryNotification();
           lastGarbageCollectionTime = now;
         }
-        while(!v8::V8::IdleNotification());
+        // while(!pIsolate->getV8Isolate()->IdleNotification()); 
+        // V8 6.5 API Changes: Do not use idle notification at all. This function  has been a no-op for almost all calls for a while now.
         continue;
       }
     }
@@ -114,7 +115,7 @@ void JSEventLoop::processEvents()
       OSS::UInt64 now = OSS::getTime();
       if (now - lastGarbageCollectionTime > _garbageCollectionFrequency * 1000)
       {
-        v8::V8::LowMemoryNotification();
+        pIsolate->getV8Isolate()->LowMemoryNotification();
         lastGarbageCollectionTime = now;
       }
     }
@@ -171,7 +172,7 @@ void JSEventLoop::processEvents()
           found = _queueManager.dequeue(pfd.fd);
           if (!found)
           {
-            found = _fdManager.signalIO(pfd);
+            found = _fdManager.signalIO(_pIsolate->getV8Isolate(), pfd);
           }
         }
         

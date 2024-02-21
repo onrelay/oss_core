@@ -38,27 +38,33 @@ namespace JS {
 class JSFunctionCallback : public boost::enable_shared_from_this<JSFunctionCallback>, private boost::noncopyable
 {
 public:
-  typedef std::vector< v8::Persistent<v8::Value> > ArgumentVector;
   typedef boost::shared_ptr<JSFunctionCallback> Ptr;
   
-  JSFunctionCallback(v8::Handle<v8::Value> func);
-  JSFunctionCallback(v8::Handle<v8::Value> func, v8::Handle<v8::Value>  args);
-  JSFunctionCallback(v8::Handle<v8::Value> func, v8::Handle<v8::Value>  args, v8::Handle<v8::Value> resultHandler);
+  JSFunctionCallback(JSValueHandle func);
+  JSFunctionCallback(JSValueHandle func, JSValueHandle args);
+  JSFunctionCallback(JSValueHandle func, JSValueHandle args, JSValueHandle resultHandler);
   virtual ~JSFunctionCallback();
   virtual void execute();
-  void handle_to_arg_vector(v8::Handle<v8::Value> input, ArgumentVector& output);
   void dispose();
   bool& autoDisposeOnExecute();
   bool autoDisposeOnExecute() const;
+
 private:
-  v8::Persistent<v8::Function> _function;
-  ArgumentVector _args;
-  v8::Persistent<v8::Function> _resultHandler;
+  v8::Isolate* getV8Isolate();
+
+  JSCopyablePersistentFunctionHandle _function;
+  JSCopyablePersistentArgumentVector _args;
+  JSCopyablePersistentFunctionHandle _resultHandler;
   
   bool _disposed;
   bool _autoDisposeOnExecute;
   OSS::mutex_critic_sec _disposeMutex;
 };
+
+inline v8::Isolate* JSFunctionCallback::getV8Isolate() 
+{
+  return js_get_v8_isolate();
+}
 
 inline bool& JSFunctionCallback::autoDisposeOnExecute()
 {
@@ -70,28 +76,28 @@ inline bool JSFunctionCallback::autoDisposeOnExecute() const
     return _autoDisposeOnExecute;
 }
   
-inline JSFunctionCallback::JSFunctionCallback(v8::Handle<v8::Value> func) :
+inline JSFunctionCallback::JSFunctionCallback(JSValueHandle func) :
     _disposed(false),
     _autoDisposeOnExecute(false)
 {
-  _function =  v8::Persistent<v8::Function>::New(v8::Handle<v8::Function>::Cast(func));
+  _function = JSCopyablePersistentFunctionHandle(getV8Isolate(),JSFunctionHandle::New( getV8Isolate(), JSFunctionHandle::Cast( func ) ));
 }
 
-inline JSFunctionCallback::JSFunctionCallback(v8::Handle<v8::Value> func, v8::Handle<v8::Value>  args)  :
+inline JSFunctionCallback::JSFunctionCallback(JSValueHandle func, v8::Handle<v8::Value> args)  :
     _disposed(false),
     _autoDisposeOnExecute(false)
 {
-  _function =  v8::Persistent<v8::Function>::New(v8::Handle<v8::Function>::Cast(func));
-  handle_to_arg_vector(args, _args);
+  _function = JSCopyablePersistentFunctionHandle(getV8Isolate(),JSFunctionHandle::New( getV8Isolate(), JSFunctionHandle::Cast( func ) ));
+  handle_to_persistent_arg_vector(getV8Isolate(), args, _args);
 }
 
-inline JSFunctionCallback::JSFunctionCallback(v8::Handle<v8::Value> func, v8::Handle<v8::Value>  args, v8::Handle<v8::Value> resultHandler)  :
+inline JSFunctionCallback::JSFunctionCallback(JSValueHandle func, v8::Handle<v8::Value> args, v8::Handle<v8::Value> resultHandler)  :
     _disposed(false),
     _autoDisposeOnExecute(false)
 {
-  _function =  v8::Persistent<v8::Function>::New(v8::Handle<v8::Function>::Cast(func));
-  _resultHandler =  v8::Persistent<v8::Function>::New(v8::Handle<v8::Function>::Cast(resultHandler));
-  handle_to_arg_vector(args, _args);
+  _function = JSCopyablePersistentFunctionHandle(getV8Isolate(),JSFunctionHandle::New( getV8Isolate(), JSFunctionHandle::Cast( func ) ));
+  _resultHandler = JSCopyablePersistentFunctionHandle(getV8Isolate(),JSFunctionHandle::New( getV8Isolate(), JSFunctionHandle::Cast( resultHandler ) ));
+  handle_to_persistent_arg_vector(getV8Isolate(), args, _args);
 }
 
 inline JSFunctionCallback::~JSFunctionCallback()
@@ -108,46 +114,43 @@ inline void JSFunctionCallback::dispose()
         return;
     }
     
-    _function.Dispose();
+    _function.Reset();
     if (!_resultHandler.IsEmpty())
     {
-      _resultHandler.Dispose();
+      _resultHandler.Reset();
     }
-    for (ArgumentVector::iterator iter = _args.begin(); iter != _args.end(); iter++)
+    for (JSCopyablePersistentArgumentVector::iterator iter = _args.begin(); iter != _args.end(); iter++)
     {
-      iter->Dispose();
+      iter->Reset();
     }
     _disposed = true;
 }
 
-inline void JSFunctionCallback::handle_to_arg_vector(v8::Handle<v8::Value> input, ArgumentVector& output)
-{
-  if (input->IsArray())
-  {
-    v8::Handle<v8::Array> arrayArg = v8::Handle<v8::Array>::Cast(input);
-    for (std::size_t i = 0; i <arrayArg->Length(); i++)
-    {
-      output.push_back(v8::Persistent<v8::Value>::New(arrayArg->Get(i)));
-    }
-  }
-  else
-  {
-    output.push_back(v8::Persistent<v8::Value>::New(input));
-  }
-}
-
 inline void JSFunctionCallback::execute()
 {
+  v8::Local<v8::Context> context = getV8Isolate()->GetCurrentContext();
+  v8::Local<v8::Object> global = context->Global();
+
+  JSLocalArgumentVector args;
+  persistent_arg_vector_to_arg_vector(getV8Isolate(),_args, args);
+
+  JSFunctionHandle func = JSFunctionHandle::New(getV8Isolate(),_function);
   if (_resultHandler.IsEmpty())
   {
-    _function->Call(js_get_global(), _args.size(), _args.data());
+    func->Call(context, global, args.size(), args.data());
   }
   else
   {
-    v8::Handle<v8::Value> result = _function->Call(js_get_global(), _args.size(), _args.data());
-    ArgumentVector resultArg;
-    handle_to_arg_vector(result, resultArg);
-    _resultHandler->Call(js_get_global(), resultArg.size(), resultArg.data());
+    v8::MaybeLocal<v8::Value> maybeResult = 
+      func->Call(context, global, args.size(), args.data());
+    if( !maybeResult.IsEmpty() )
+    {
+      JSValueHandle result = maybeResult.ToLocalChecked();
+      JSArgumentVector resultArg;
+      handle_to_arg_vector(getV8Isolate(), result, resultArg);
+      JSFunctionHandle resultHandler = JSFunctionHandle::New(getV8Isolate(),_resultHandler);
+      resultHandler->Call(context, global, resultArg.size(), resultArg.data());
+    }
   }
   
   if (_autoDisposeOnExecute)

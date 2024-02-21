@@ -42,17 +42,17 @@ public:
   JSFileDescriptorManager(JSEventLoop* pEventLoop);
   ~JSFileDescriptorManager();
   
-  void addFileDescriptor(int fd, v8::Handle<v8::Value> ioHandler, int events);
+  void addFileDescriptor(v8::Isolate* isolate, int fd, v8::Handle<v8::Value> ioHandler, int events);
   bool removeFileDescriptor(int fd);
   JSFileDescriptor::Ptr findDescriptor(int fd);
   void appendDescriptors(Descriptors& descriptors);
-  bool signalIO(pollfd pfd);
+  bool signalIO(v8::Isolate* isolate, pollfd pfd);
   
   //
   // Methods exposed to javascript
   //
-  static v8::Handle<v8::Value> monitor_descriptor(const v8::Arguments& args);
-  static v8::Handle<v8::Value> unmonitor_descriptor(const v8::Arguments& args);
+  JS_METHOD_DECLARE(monitor_descriptor);
+  JS_METHOD_DECLARE(unmonitor_descriptor);
   
 private:
   OSS::mutex_critic_sec _descriptorsMutex;

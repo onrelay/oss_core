@@ -34,7 +34,7 @@ static char SERVICE_BUF[SERVICE_BUF_SIZE];
 
 JS_METHOD_IMPL(__create_inet_stream_socket)
 {
-  js_method_arg_assert_size_eq(4);
+  js_method_args_assert_size_eq(4);
   js_method_arg_assert_string(0);
   js_method_arg_assert_string(1);
   js_method_arg_assert_uint32(2);
@@ -47,12 +47,12 @@ JS_METHOD_IMPL(__create_inet_stream_socket)
   
   int ret = create_inet_stream_socket(host.c_str(), service.c_str(), proto, flags);
   
-  return JSInt32(ret);
+  js_method_set_return_handle(js_method_int32(ret));
 }
 
 JS_METHOD_IMPL(__create_inet_dgram_socket)
 {
-  js_method_arg_assert_size_eq(2);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_uint32(0);
   js_method_arg_assert_int32(1);
   
@@ -61,12 +61,12 @@ JS_METHOD_IMPL(__create_inet_dgram_socket)
   
   int ret = create_inet_dgram_socket(proto, flags);
   
-  return JSInt32(ret);
+  js_method_set_return_handle(js_method_int32(ret));
 }
 
 JS_METHOD_IMPL(__sendto_inet_dgram_socket)
 {
-  js_method_arg_assert_size_eq(6);
+  js_method_args_assert_size_eq(6);
   
   js_method_arg_assert_int32(0);
   js_method_arg_assert_buffer(1);
@@ -76,7 +76,7 @@ JS_METHOD_IMPL(__sendto_inet_dgram_socket)
   js_method_arg_assert_int32(5);
   
   int32_t fd = js_method_arg_as_int32(0);
-  BufferObject* pBuffer = js_method_arg_unwrap_object(BufferObject, 1);
+  BufferObject* pBuffer = js_method_unwrap_object(BufferObject, 1);
   uint32_t size = js_method_arg_as_uint32(2);
   std::string host = js_method_arg_as_std_string(3);
   std::string service = js_method_arg_as_std_string(4);
@@ -84,19 +84,19 @@ JS_METHOD_IMPL(__sendto_inet_dgram_socket)
   
   int32_t ret = sendto_inet_dgram_socket(fd, pBuffer->buffer().data(), size, host.c_str(), service.c_str(), flags);
   
-  return JSInt32(ret);
+  js_method_set_return_handle(js_method_int32(ret));
 }
 
 JS_METHOD_IMPL(__recvfrom_inet_dgram_socket)
 {
-  js_method_arg_assert_size_eq(4);
+  js_method_args_assert_size_eq(4);
   js_method_arg_assert_int32(0);
   js_method_arg_assert_buffer(1);
   js_method_arg_assert_uint32(2);
   js_method_arg_assert_int32(3);
   
   int32_t fd = js_method_arg_as_int32(0);
-  BufferObject* pBuffer = js_method_arg_unwrap_object(BufferObject, 1);
+  BufferObject* pBuffer = js_method_unwrap_object(BufferObject, 1);
   uint32_t size = js_method_arg_as_uint32(2);
   int32_t flags = js_method_arg_as_int32(3);
   
@@ -104,18 +104,18 @@ JS_METHOD_IMPL(__recvfrom_inet_dgram_socket)
   memset(SERVICE_BUF, 0, SERVICE_BUF_SIZE);
   uint32_t ret = recvfrom_inet_dgram_socket(fd, (void*)pBuffer->buffer().data(), size, HOST_BUF, HOST_BUF_SIZE, SERVICE_BUF, SERVICE_BUF_SIZE, flags, LIBSOCKET_NUMERIC);
   
-  JSObjectHandle result = JSObject();
-  result->Set(JSLiteral("size"), JSUInt32(ret));
-  result->Set(JSLiteral("host"), JSString(HOST_BUF));
-  result->Set(JSLiteral("port"), JSString(SERVICE_BUF));
-  result->Set(JSLiteral("buffer"), js_method_arg(1));
+  JSObjectHandle result = js_method_object();
+  result->Set(js_method_context(), js_method_string("size"), js_method_uint32(ret));
+  result->Set(js_method_context(), js_method_string("host"), js_method_string(HOST_BUF));
+  result->Set(js_method_context(), js_method_string("port"), js_method_string(SERVICE_BUF));
+  result->Set(js_method_context(), js_method_string("buffer"), js_method_arg(1));
   
-  return result;
+  js_method_set_return_handle(result);
 }
 
 JS_METHOD_IMPL(__connect_inet_dgram_socket)
 {
-  js_method_arg_assert_size_eq(3);
+  js_method_args_assert_size_eq(3);
   js_method_arg_assert_int32(0);
   js_method_arg_assert_string(1);
   js_method_arg_assert_string(2);
@@ -126,32 +126,32 @@ JS_METHOD_IMPL(__connect_inet_dgram_socket)
   
   int32_t ret =  connect_inet_dgram_socket(fd, host.c_str(), service.c_str());
   
-  return JSInt32(ret);
+  js_method_set_return_handle(js_method_int32(ret));
 }
 
 JS_METHOD_IMPL(__destroy_inet_socket)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_int32(0);
   int32_t fd = js_method_arg_as_int32(0);
   int32_t ret = destroy_inet_socket(fd);
-  return JSInt32(ret);
+  js_method_set_return_handle(js_method_int32(ret));
 }
 
 JS_METHOD_IMPL(__shutdown_inet_stream_socket)
 {
-  js_method_arg_assert_size_eq(2);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_int32(0);
   js_method_arg_assert_int32(1);
   int32_t fd = js_method_arg_as_int32(0);
   int32_t method = js_method_arg_as_int32(1);
   int32_t ret = shutdown_inet_stream_socket(fd, method);
-  return JSInt32(ret);
+  js_method_set_return_handle(js_method_int32(ret));
 }
 
 JS_METHOD_IMPL(__create_inet_server_socket)
 {
-  js_method_arg_assert_size_eq(5);
+  js_method_args_assert_size_eq(5);
   js_method_arg_assert_string(0);
   js_method_arg_assert_string(1);
   js_method_arg_assert_uint32(2);
@@ -166,12 +166,12 @@ JS_METHOD_IMPL(__create_inet_server_socket)
   
   int32_t ret = create_inet_server_socket(host.c_str(), service.c_str(), proto, family, flags);
   
-  return JSInt32(ret);
+  js_method_set_return_handle(js_method_int32(ret));
 }
 
 JS_METHOD_IMPL(__accept_inet_stream_socket)
 {
-  js_method_arg_assert_size_eq(2);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_int32(0);
   js_method_arg_assert_int32(1);
   
@@ -182,29 +182,29 @@ JS_METHOD_IMPL(__accept_inet_stream_socket)
   memset(SERVICE_BUF, 0, SERVICE_BUF_SIZE);
   int32_t cfd = accept_inet_stream_socket(fd, HOST_BUF, HOST_BUF_SIZE, SERVICE_BUF, SERVICE_BUF_SIZE, LIBSOCKET_NUMERIC, flags);
   
-  JSObjectHandle result = JSObject();
-  result->Set(JSLiteral("fd"), JSInt32(cfd));
+  JSObjectHandle result = js_method_object();
+  result->Set(js_method_context(), js_method_string("fd"), js_method_int32(cfd));
   if (cfd != -1)
   {
-    result->Set(JSLiteral("host"), JSString(HOST_BUF));
-    result->Set(JSLiteral("port"), JSString(SERVICE_BUF));
+    result->Set(js_method_context(), js_method_string("host"), js_method_string(HOST_BUF));
+    result->Set(js_method_context(), js_method_string("port"), js_method_string(SERVICE_BUF));
   }
-  return result;
+  js_method_set_return_handle(result);
 }
 
 JS_METHOD_IMPL(__get_address_family)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string host = js_method_arg_as_std_string(0);
   int32_t ret = get_address_family(host.c_str());
-  return JSInt32(ret);
+  js_method_set_return_handle(js_method_int32(ret));
 }
 
 #if !defined(__APPLE__)
 JS_METHOD_IMPL(__create_multicast_socket)
 {
-  js_method_arg_assert_size_eq(3);
+  js_method_args_assert_size_eq(3);
   js_method_arg_assert_string(0);
   js_method_arg_assert_string(1);
   js_method_arg_assert_string(2);
@@ -215,14 +215,13 @@ JS_METHOD_IMPL(__create_multicast_socket)
   
   int32_t ret = create_multicast_socket(group.c_str(), port.c_str(), ifname.c_str());
   
-  
-  return JSInt32(ret);
+  js_method_set_return_handle(js_method_int32(ret));
 }
 #endif
 
 JS_METHOD_IMPL(__getpeername)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_int32(0);
   int32_t fd = js_method_arg_as_int32(0);
   
@@ -234,7 +233,8 @@ JS_METHOD_IMPL(__getpeername)
   len = sizeof addr;
   if (getpeername(fd, (struct sockaddr*)&addr, &len) == -1)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
 
   if (addr.ss_family == AF_INET) 
@@ -250,15 +250,15 @@ JS_METHOD_IMPL(__getpeername)
       inet_ntop(AF_INET6, &s->sin6_addr, host, sizeof host);
   }
   
-  JSObjectHandle result = JSObject();
-  result->Set(JSLiteral("host"), JSString(host));
-  result->Set(JSLiteral("port"), JSString(OSS::string_from_number<int>(port).c_str()));
-  return result;
+  JSObjectHandle result = js_method_object();
+  result->Set(js_method_context(), js_method_string("host"), js_method_string(host));
+  result->Set(js_method_context(), js_method_string("port"), js_method_string(OSS::string_from_number<int>(port).c_str()));
+  js_method_set_return_handle(result);
 }
 
 JS_METHOD_IMPL(__getsockname)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_int32(0);
   int32_t fd = js_method_arg_as_int32(0);
   
@@ -270,7 +270,8 @@ JS_METHOD_IMPL(__getsockname)
   len = sizeof addr;
   if (getsockname(fd, (struct sockaddr*)&addr, &len) == -1)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
 
   if (addr.ss_family == AF_INET) 
@@ -286,10 +287,10 @@ JS_METHOD_IMPL(__getsockname)
       inet_ntop(AF_INET6, &s->sin6_addr, host, sizeof host);
   }
   
-  JSObjectHandle result = JSObject();
-  result->Set(JSLiteral("host"), JSString(host));
-  result->Set(JSLiteral("port"), JSString(OSS::string_from_number<int>(port).c_str()));
-  return result;
+  JSObjectHandle result = js_method_object();
+  result->Set(js_method_context(), js_method_string("host"), js_method_string(host));
+  result->Set(js_method_context(), js_method_string("port"), js_method_string(OSS::string_from_number<int>(port).c_str()));
+  js_method_set_return_handle(result);
 }
 
 JS_EXPORTS_INIT()

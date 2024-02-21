@@ -37,15 +37,18 @@ namespace JS {
 //
 static void V8ErrorMessageCallback(v8::Handle<v8::Message> message, v8::Handle<v8::Value> data)
 {
-  v8::HandleScope handle_scope;
+  v8::Isolate* isolate = v8::Isolate::GetCurrent();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+
+  v8::HandleScope scope(isolate);
   
-  if (message->GetSourceLine()->IsString())
+  if (message->GetSourceLine(context).ToLocalChecked()->IsString())
   {
     std::string error =
             + "Javascript error on line : "
-            + string_from_js_string(message->GetSourceLine());
+            + string_from_js_string(isolate, message->GetSourceLine(context).ToLocalChecked());
     OSS::log_error(error);
-    OSS::log_error(get_stack_trace(message, 1024));
+    OSS::log_error(get_stack_trace(isolate, message, 1024));
   }
 }
 
@@ -60,16 +63,17 @@ JSIsolateManager::JSIsolateManager()
   if (v8::V8::Initialize())
   {
     //
+    // Create the root isolate
+    //
+    _rootIsolate = JSIsolate::Ptr(new JSIsolate(0));
+
+    //
     // Set the external heap to 20mb before attempting to garbage collect
     //
-    v8::V8::AdjustAmountOfExternalAllocatedMemory(1024 * 1024 * 20);
-    v8::V8::AddMessageListener(V8ErrorMessageCallback);
+    v8::Isolate::GetCurrent()->AdjustAmountOfExternalAllocatedMemory(1024 * 1024 * 20);
+    v8::Isolate::GetCurrent()->AddMessageListener(V8ErrorMessageCallback);
   }
   
-  //
-  // Create the root isolate
-  //
-  _rootIsolate = JSIsolate::Ptr(new JSIsolate(0));
 }
 
 JSIsolateManager::~JSIsolateManager()
@@ -151,11 +155,11 @@ intptr_t JSIsolateManager::getExternalData(const std::string& name) const
   return iter->second;
 }
 
-void JSIsolateManager::initGlobalExports(JSObjectTemplateHandle& global)
+void JSIsolateManager::initGlobalExports(v8::Isolate* isolate, JSObjectTemplateHandle& global)
 {
   for(GlobalExports::iterator iter = _exports.begin(); iter != _exports.end(); iter++)
   {
-    global->Set(v8::String::New(iter->first.c_str()), v8::FunctionTemplate::New(iter->second));
+    global->Set(JSString(isolate,iter->first), v8::FunctionTemplate::New(isolate,iter->second));
   }
   
   for (GlobalExportVector::iterator iter = _exportHandlers.begin(); iter != _exportHandlers.end(); iter++)

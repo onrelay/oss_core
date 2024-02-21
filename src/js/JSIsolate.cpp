@@ -92,18 +92,19 @@ void JSIsolate::dispose()
 
 void JSIsolate::internal_run()
 {
-  _pIsolate = v8::Isolate::New();
+  v8::Isolate::CreateParams params;
+  _pIsolate = v8::Isolate::New(params);
   v8::Isolate::Scope global_scope(_pIsolate);
   _threadId  = pthread_self();
   JSIsolateManager::instance().registerIsolate(shared_from_this());
-  v8::HandleScope handle_scope;
+  v8::HandleScope handle_scope(_pIsolate);
 
-  v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
-  _globalTemplate = v8::Persistent<v8::ObjectTemplate>::New(global);
+  JSObjectTemplateHandle global = v8::ObjectTemplate::New(_pIsolate);
+  _globalTemplate = JSCopyablePersistentObjectTemplateHandle(_pIsolate, global);
   
-  v8::Handle<v8::ObjectTemplate> objectTemplate = v8::ObjectTemplate::New();
+  JSObjectTemplateHandle objectTemplate = v8::ObjectTemplate::New(_pIsolate);
   objectTemplate->SetInternalFieldCount(1);
-  _objectTemplate = v8::Persistent<v8::ObjectTemplate>::New(objectTemplate);
+  _objectTemplate = JSCopyablePersistentObjectTemplateHandle(_pIsolate, objectTemplate);
   
   //
   // Set the thread id and update the manager
@@ -114,8 +115,8 @@ void JSIsolate::internal_run()
   // Initialize global and assign it to the context
   //
   JSIsolateManager::instance().modulesMutex().lock();
-  JSIsolateManager::instance().initGlobalExports(global);
-  _pModuleManager->initGlobalExports(global);
+  JSIsolateManager::instance().initGlobalExports(_pIsolate,global);
+  _pModuleManager->initGlobalExports(_pIsolate,global);
   JSIsolateManager::instance().modulesMutex().unlock();
 
   if (isRoot())
@@ -123,48 +124,51 @@ void JSIsolate::internal_run()
     _pModuleManager->setMainScript(_script);
   }
 
-  v8::Handle<v8::Context> context = v8::Context::New(0, global);
-  _context = v8::Persistent<v8::Context>::New(context);
+  v8::Handle<v8::Context> context = v8::Context::New(_pIsolate, 0, global);
+  _context = JSCopyablePersistentContextHandle(_pIsolate, context);
   v8::Context::Scope context_scope(context);
-  v8::TryCatch try_catch;
+  v8::TryCatch try_catch( _pIsolate );
   try_catch.SetVerbose(true);
   
   JSIsolateManager::instance().modulesMutex().lock();
-  if (!_pModuleManager->initialize(try_catch, global))
+  if (!_pModuleManager->initialize(_pIsolate, try_catch, global))
   {
     OSS_LOG_ERROR("Unable to initialize module manager");
-    report_js_exception(try_catch, true);
+    report_js_exception(_pIsolate, try_catch, true);
     return;
   }
   JSIsolateManager::instance().modulesMutex().unlock();
   
-  v8::Handle<v8::Script> compiledScript ;
+  v8::MaybeLocal<v8::Script> maybeCompiledScript;
   if (_source.empty())
   {
-    v8::Handle<v8::String> scriptSource = read_file_skip_shebang(OSS::boost_path(_script), true);
-    compiledScript = v8::Script::Compile(scriptSource, v8::String::New(OSS::boost_path(_script).c_str()));
+    std::string strScriptSource = read_file_skip_shebang(OSS::boost_path(_script), true);
+    v8::Handle<v8::String> scriptSource = JSString( _pIsolate, strScriptSource );
+    v8::ScriptOrigin scriptOrigin(JSString(_pIsolate, OSS::boost_path(_script) ) );
+    maybeCompiledScript = v8::Script::Compile(context, scriptSource, &scriptOrigin );
   }
   else
   {
     std::ostringstream strm;
     strm << "try { " << _source << " } catch(e) {console.printStackTrace(e); _exit(-1); } ;async.processEvents();";
-    v8::Handle<v8::String> scriptSource = JSString(strm.str());
-    compiledScript = v8::Script::Compile(scriptSource);
+    v8::Handle<v8::String> scriptSource = JSString( _pIsolate, strm.str());
+    maybeCompiledScript = v8::Script::Compile(context, scriptSource);
   }
   
-  if (compiledScript.IsEmpty())
+  if (maybeCompiledScript.IsEmpty())
   {
     OSS_LOG_ERROR("Unable to compile script");
-    report_js_exception(try_catch, true);
+    report_js_exception(_pIsolate, try_catch, true);
     _exitValue = -1;
     return;
   }
-  
-  v8::Handle<v8::Value> result = compiledScript->Run();
+  v8::Handle<v8::Script> compiledScript = maybeCompiledScript.ToLocalChecked();
+
+  v8::MaybeLocal<v8::Value> result = compiledScript->Run( context );
   if (result.IsEmpty())
   {
     OSS_LOG_ERROR("Unable to run script");
-    report_js_exception(try_catch, true);
+    report_js_exception(_pIsolate, try_catch, true);
     _exitValue = -1;
     return;
   }
@@ -273,21 +277,23 @@ JSPluginManager* JSIsolate::getPluginManager()
 
 JSObjectHandle JSIsolate::getGlobal()
 {
-  return _context.value()->Global();
+  v8::Handle<v8::Context> context = v8::Handle<v8::Context>::New( _pIsolate, _context );
+  return context->Global();
 }
 
 JSValueHandle JSIsolate::parseJSON(const std::string& json)
 {
-  js_enter_scope();
-  v8::Local<v8::Object> JSON = getGlobal()->Get(JSLiteral("JSON"))->ToObject();
-  v8::Handle<v8::Value> parseFunc = JSON->Get(JSLiteral("parse"));
-  v8::Handle<v8::Function> parse = v8::Handle<v8::Function>::Cast(parseFunc);
+  v8::HandleScope scope(_pIsolate);
+  JSContextHandle context = v8::Handle<v8::Context>::New( _pIsolate, _context );
+  JSObjectHandle JSON = JSObjectHandle::Cast( getGlobal()->Get(context,JSString(_pIsolate,"JSON")).ToLocalChecked() );
+  JSValueHandle parseFunc = JSON->Get(context,JSString(_pIsolate,"parse")).ToLocalChecked();
+  JSFunctionHandle parse = JSFunctionHandle::Cast(parseFunc);
 
-  JSValueHandle val = JSString(json);
+  JSValueHandle val = JSString(_pIsolate,json);
   JSArgumentVector args;
   args.push_back(val);
   
-  return parse->Call(getGlobal(), args.size(), args.data());
+  return parse->Call(context, getGlobal(), args.size(), args.data()).ToLocalChecked();
 }
 
 void JSIsolate::join()
@@ -302,8 +308,10 @@ void JSIsolate::join()
 
 JSLocalObjectHandle JSIsolate::wrapExternalPointer(void* ptr)
 {
-  JSLocalObjectHandle pObject = _objectTemplate.value()->NewInstance();
-  pObject->SetInternalField(0, JSExternal(ptr));
+  JSContextHandle context = v8::Handle<v8::Context>::New( _pIsolate, _context );
+  JSObjectTemplateHandle objectTemplate = JSObjectTemplateHandle::New( _pIsolate, _objectTemplate );
+  JSLocalObjectHandle pObject = objectTemplate->NewInstance(context).ToLocalChecked();
+  pObject->SetInternalField(0, JSExternal(_pIsolate,ptr));
   return pObject;
 }
 

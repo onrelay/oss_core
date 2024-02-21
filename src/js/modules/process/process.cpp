@@ -31,7 +31,7 @@ JS_CONSTRUCTOR_IMPL(ProcessObject)
 {
   ProcessObject* pProcess = 0;
   
-  js_method_arg_assert_size_gteq(2);
+  js_method_args_assert_size_gteq(2);
   js_method_arg_assert_string(0);
   js_method_arg_assert_string(1);
   
@@ -40,13 +40,13 @@ JS_CONSTRUCTOR_IMPL(ProcessObject)
   std::string shutdownCommand;
   std::string pidFile;
   
-  if (js_method_arg_length() >= 3)
+  if (js_method_args_length() >= 3)
   {
     js_method_arg_assert_string(2);
     startupCommand = js_method_arg_as_std_string(2);
   }
   
-  if (js_method_arg_length() >= 4)
+  if (js_method_args_length() >= 4)
   {
     js_method_arg_assert_string(3);
     pidFile = js_method_arg_as_std_string(3);
@@ -55,58 +55,58 @@ JS_CONSTRUCTOR_IMPL(ProcessObject)
   pProcess = new ProcessObject();
   pProcess->_pProcess = new ProcessObject::Process(processName, startupCommand, shutdownCommand, pidFile);
   pProcess->_pProcess->setDeadProcAction(ProcessObject::Process::ProcessUnmonitor);
-  pProcess->Wrap(js_method_arg_self());
+  pProcess->Wrap(js_method_self());
   
-  return js_method_arg_self();
+  js_method_set_return_self();
 }
 
 JS_METHOD_IMPL(ProcessObject::run)
 {
-  ProcessObject* pProcess = js_method_arg_unwrap_self(ProcessObject);
-  return JSBoolean(pProcess->_pProcess->executeAndMonitor());
+  ProcessObject* pProcess = js_method_unwrap_self(ProcessObject);
+  js_method_set_return_boolean(pProcess->_pProcess->executeAndMonitor());
 }
 
 JS_METHOD_IMPL(ProcessObject::kill)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_int32(0);
   int signal = js_method_arg_as_int32(0);
-  ProcessObject* pProcess = js_method_arg_unwrap_self(ProcessObject);
-  return JSInt32(pProcess->_pProcess->kill(signal));
+  ProcessObject* pProcess = js_method_unwrap_self(ProcessObject);
+  js_method_set_return_handle(js_method_int32(pProcess->_pProcess->kill(signal)));
 }
 
 JS_METHOD_IMPL(ProcessObject::stop)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_int32(0);
   int signal = js_method_arg_as_int32(0);
-  ProcessObject* pProcess = js_method_arg_unwrap_self(ProcessObject);
-  return JSBoolean(pProcess->_pProcess->shutDown(signal));
+  ProcessObject* pProcess = js_method_unwrap_self(ProcessObject);
+  js_method_set_return_boolean(pProcess->_pProcess->shutDown(signal));
 }
 
 JS_METHOD_IMPL(ProcessObject::restart)
 {
-  ProcessObject* pProcess = js_method_arg_unwrap_self(ProcessObject);
-  return JSBoolean(pProcess->_pProcess->restart());
+  ProcessObject* pProcess = js_method_unwrap_self(ProcessObject);
+  js_method_set_return_boolean(pProcess->_pProcess->restart());
 }
 
 JS_METHOD_IMPL(ProcessObject::unmonitor)
 {
-  ProcessObject* pProcess = js_method_arg_unwrap_self(ProcessObject);
+  ProcessObject* pProcess = js_method_unwrap_self(ProcessObject);
   pProcess->_pProcess->unmonitor();
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ProcessObject::isAlive)
 {
-  ProcessObject* pProcess = js_method_arg_unwrap_self(ProcessObject);
-  return JSBoolean(pProcess->_pProcess->isAlive());
+  ProcessObject* pProcess = js_method_unwrap_self(ProcessObject);
+  js_method_set_return_boolean(pProcess->_pProcess->isAlive());
 }
 
 JS_METHOD_IMPL(ProcessObject::getPid)
 {
-  ProcessObject* pProcess = js_method_arg_unwrap_self(ProcessObject);
-  return JSInt32(pProcess->_pProcess->getPID());
+  ProcessObject* pProcess = js_method_unwrap_self(ProcessObject);
+  js_method_set_return_handle(js_method_int32(pProcess->_pProcess->getPID()));
 }
 
 JS_EXPORTS_INIT()

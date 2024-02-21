@@ -32,19 +32,19 @@ namespace JS {
 
 
 
-std::string string_from_js_string(v8::Handle<v8::Value> str)
+std::string string_from_js_string(v8::Isolate* isolate, v8::Handle<v8::Value> str)
 {
   if (!str->IsString())
     return "";
-  v8::String::Utf8Value value(str);
+  v8::String::Utf8Value value(isolate,str);
   return *value;
 }
 
-std::string string_from_js_value(const v8::Handle<v8::Value>& str)
+std::string string_from_js_value(v8::Isolate* isolate, const v8::Handle<v8::Value>& str)
 {
   if (!str->IsString())
     return "";
-  v8::String::Utf8Value value(str);
+  v8::String::Utf8Value value(isolate,str);
   return *value;
 }
 
@@ -53,13 +53,13 @@ const char* cstring_from_js_string(const v8::String::Utf8Value& value)
   return *value ? *value : "<str conversion failed>";
 }
 
-void report_js_exception(v8::TryCatch &try_catch, bool show_line)
+void report_js_exception(v8::Isolate* isolate, v8::TryCatch &try_catch, bool show_line)
 {
   using namespace v8;
   
   Handle<Message> message = try_catch.Message();
 
-  v8::String::Utf8Value error(try_catch.Exception());
+  v8::String::Utf8Value error(isolate,try_catch.Exception());
   if (error.length() > 0)
   {
 
@@ -81,14 +81,14 @@ void report_js_exception(v8::TryCatch &try_catch, bool show_line)
     if (show_line && !message.IsEmpty())
     {
       // Print (filename):(line number): (message).
-      String::Utf8Value filename(message->GetScriptResourceName());
+      String::Utf8Value filename(isolate,message->GetScriptResourceName());
       const char* filename_string = cstring_from_js_string(filename);
-      int linenum = message->GetLineNumber();
+      int linenum = message->GetLineNumber(isolate->GetCurrentContext()).ToChecked();
       //fprintf(stderr, "%s:%i\n", filename_string, linenum);
 
       errorMsg << filename_string << ":" << linenum << std::endl;
       // Print line of source code.
-      String::Utf8Value sourceline(message->GetSourceLine());
+      String::Utf8Value sourceline(isolate,message->GetSourceLine(isolate->GetCurrentContext()).ToLocalChecked());
       const char* sourceline_string = cstring_from_js_string(sourceline);
 
       // HACK HACK HACK
@@ -114,12 +114,12 @@ void report_js_exception(v8::TryCatch &try_catch, bool show_line)
       //fprintf(stderr, "%s\n", sourceline_string + offset);
       errorMsg << sourceline_string + offset << std::endl;
       // Print wavy underline (GetUnderline is deprecated).
-      int start = message->GetStartColumn();
+      int start = message->GetStartColumn(isolate->GetCurrentContext()).ToChecked();
       for (int i = offset; i < start; i++)
       {
         errorMsg << " ";
       }
-      int end = message->GetEndColumn();
+      int end = message->GetEndColumn(isolate->GetCurrentContext()).ToChecked();
       for (int i = start; i < end; i++)
       {
         errorMsg << "^";
@@ -127,7 +127,7 @@ void report_js_exception(v8::TryCatch &try_catch, bool show_line)
       errorMsg << std::endl;
     }
 
-    String::Utf8Value trace(try_catch.StackTrace());
+    String::Utf8Value trace(isolate,try_catch.StackTrace(isolate->GetCurrentContext()).ToLocalChecked());
 
     if (trace.length() > 0)
     {
@@ -142,101 +142,108 @@ void report_js_exception(v8::TryCatch &try_catch, bool show_line)
 }
 
 
-
-v8::Handle<v8::Value> log_info_callback(const v8::Arguments& args)
+JS_GLOBAL_FUNCTION_IMPL(log_info_callback)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-
-  if (args.Length() == 2)
+  if (_args_.Length() < 1)
   {
-    v8::HandleScope scope;
-    v8::Handle<v8::Value> arg0 = args[0];
-    v8::String::Utf8Value value0(arg0);
+    js_method_set_return_undefined();
+    return;
+  }
 
-    v8::Handle<v8::Value> arg1 = args[1];
-    v8::String::Utf8Value value1(arg1);
+  if (_args_.Length() == 2)
+  {
+    js_method_enter_scope();
+    v8::Handle<v8::Value> arg0 = _args_[0];
+    v8::String::Utf8Value value0(js_method_isolate(),arg0);
+
+    v8::Handle<v8::Value> arg1 = _args_[1];
+    v8::String::Utf8Value value1(js_method_isolate(),arg1);
     std::ostringstream msg;
     msg << *value0 << " " << *value1;
     OSS::log_information(msg.str());
   }
   else
   {
-    v8::HandleScope scope;
-    v8::Handle<v8::Value> arg = args[0];
-    v8::String::Utf8Value value(arg);
+    js_method_enter_scope();
+    v8::Handle<v8::Value> arg = _args_[0];
+    v8::String::Utf8Value value(js_method_isolate(),arg);
     std::ostringstream msg;
     msg << *value;
     OSS::log_information(msg.str());
   }
   
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-v8::Handle<v8::Value> log_debug_callback(const v8::Arguments& args)
+JS_GLOBAL_FUNCTION_IMPL(log_debug_callback)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-
-  if (args.Length() == 2)
+  if (_args_.Length() < 1)
   {
-    v8::HandleScope scope;
-    v8::Handle<v8::Value> arg0 = args[0];
-    v8::String::Utf8Value value0(arg0);
+    js_method_set_return_undefined();
+    return;
+  }
+  if (_args_.Length() == 2)
+  {
+    js_method_enter_scope();
+    v8::Handle<v8::Value> arg0 = _args_[0];
+    v8::String::Utf8Value value0(js_method_isolate(),arg0);
 
-    v8::Handle<v8::Value> arg1 = args[1];
-    v8::String::Utf8Value value1(arg1);
+    v8::Handle<v8::Value> arg1 = _args_[1];
+    v8::String::Utf8Value value1(js_method_isolate(),arg1);
     std::ostringstream msg;
     msg << *value0 << " " << *value1;
     OSS::log_debug(msg.str());
   }
   else
   {
-    v8::HandleScope scope;
-    v8::Handle<v8::Value> arg = args[0];
-    v8::String::Utf8Value value(arg);
+    js_method_enter_scope();
+    v8::Handle<v8::Value> arg = _args_[0];
+    v8::String::Utf8Value value(js_method_isolate(),arg);
     std::ostringstream msg;
     msg << *value;
     OSS::log_debug(msg.str());
   }
 
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-v8::Handle<v8::Value> log_error_callback(const v8::Arguments& args)
+JS_GLOBAL_FUNCTION_IMPL(log_error_callback)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-
-  if (args.Length() == 2)
+  if (_args_.Length() < 1)
   {
-    v8::HandleScope scope;
-    v8::Handle<v8::Value> arg0 = args[0];
-    v8::String::Utf8Value value0(arg0);
+    js_method_set_return_undefined();
+    return;
+  }
+  if (_args_.Length() == 2)
+  {
+    js_method_enter_scope();
+    v8::Handle<v8::Value> arg0 = _args_[0];
+    v8::String::Utf8Value value0(js_method_isolate(),arg0);
 
-    v8::Handle<v8::Value> arg1 = args[1];
-    v8::String::Utf8Value value1(arg1);
+    v8::Handle<v8::Value> arg1 =_args_[1];
+    v8::String::Utf8Value value1(js_method_isolate(),arg1);
     std::ostringstream msg;
     msg << *value0 << "JavaScript Error: " << *value1;
     OSS::log_error(msg.str());
   }
   else
   {
-    v8::HandleScope scope;
-    v8::Handle<v8::Value> arg = args[0];
-    v8::String::Utf8Value value(arg);
+    js_method_enter_scope();
+    v8::Handle<v8::Value> arg = _args_[0];
+    v8::String::Utf8Value value(js_method_isolate(),arg);
     std::ostringstream msg;
     msg << "JavaScript Error: " << *value;
     OSS::log_error(msg.str());
   }
-  return v8::Undefined();
+
+  js_method_set_return_undefined();
 }
 
 // Reads a file into a v8 string.
-v8::Handle<v8::String> read_file(const std::string& name)
+std::string read_file(const std::string& name)
 {
   FILE* file = fopen(name.c_str(), "rb");
-  if (file == NULL) return v8::Handle<v8::String>();
+  if (file == NULL) return "";
 
   fseek(file, 0, SEEK_END);
   int size = ftell(file);
@@ -254,19 +261,19 @@ v8::Handle<v8::String> read_file(const std::string& name)
   // Check if it starts with a shebang
   //
   
-  v8::Handle<v8::String> result = v8::String::New(chars, size);
+  std::string result( chars, size);
   delete[] chars;
   return result;
 }
 
-v8::Handle<v8::String> read_file_skip_shebang(const std::string& name, bool hasCommonJS) 
+std::string read_file_skip_shebang(const std::string& name, bool hasCommonJS) 
 {
   std::ifstream scriptFile;
   scriptFile.open(name.c_str());
   
   if (!scriptFile.is_open() || !scriptFile.good())
   {
-    return v8::Handle<v8::String>();
+    return "";
   }
   std::ostringstream strm;
   
@@ -286,10 +293,10 @@ v8::Handle<v8::String> read_file_skip_shebang(const std::string& name, bool hasC
   }
   if (hasCommonJS)
     strm << " } catch(e) {console.printStackTrace(e); _exit(-1); } ;async.processEvents();";
-  return v8::String::New(strm.str().data(), strm.str().size());
+  return strm.str();
 }
 
-v8::Handle<v8::String> read_directory(const boost::filesystem::path& directory)
+std::string read_directory(const boost::filesystem::path& directory)
 {
   std::string data;
 
@@ -317,7 +324,7 @@ v8::Handle<v8::String> read_directory(const boost::filesystem::path& directory)
               if (file == NULL)
               {
                 OSS_LOG_ERROR("Google V8 failed to open file " << currentFile);
-                return v8::Handle<v8::String>();
+                return "";
               }
 
               fseek(file, 0, SEEK_END);
@@ -350,37 +357,39 @@ v8::Handle<v8::String> read_directory(const boost::filesystem::path& directory)
     }
 
   }
-  return  v8::String::New(data.c_str(), data.size());
+  return data;
 }
 
-void wrap_external_object(v8::Persistent<v8::Context>* pContext, 
+/* Not used 
+void wrap_external_object(v8::Isolate* isolate, 
   v8::Persistent<v8::ObjectTemplate>* pRequestTemplate,
   v8::Handle<v8::Object>& objectInstance,
   OSS_HANDLE pObject)
 {
   // Fetch the template for creating JavaScript request wrappers.
   // It only has to be created once, which we do on demand.
-  v8::Handle<v8::ObjectTemplate> templ = *pRequestTemplate;
+  v8::Handle<v8::ObjectTemplate> templ = v8::Handle<v8::ObjectTemplate>::New( isolate, *pRequestTemplate);
 
   // Set up an exception handler before calling the Process function
 
   
-  objectInstance = templ->NewInstance();
+  objectInstance = templ->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 
   // Wrap the raw C++ pointer in an External so it can be referenced
   // from within JavaScript.
-  v8::Handle<v8::External> request_ptr = v8::External::New(pObject);
+  v8::Handle<v8::External> request_ptr = v8::External::New(isolate,pObject);
 
   // Store the request pointer in the JavaScript wrapper.
   objectInstance->SetInternalField(0, request_ptr);
 
 }
+*/
 
-std::string get_stack_trace(v8::Handle<v8::Message> message, uint32_t bufLen)
+std::string get_stack_trace(v8::Isolate* isolate, v8::Handle<v8::Message> message, uint32_t bufLen)
 { 
   FILE* fp = ::fmemopen(0, bufLen, "w+");
   
-  message->PrintCurrentStackTrace(fp);
+  message->PrintCurrentStackTrace(isolate,fp);
   
   fseek(fp, 0, SEEK_END);
   int size = ftell(fp);

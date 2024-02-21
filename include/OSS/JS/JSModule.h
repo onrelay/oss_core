@@ -51,8 +51,8 @@ public:
   JSModule(JSIsolate* pIsolate);
   ~JSModule();
   
-  bool initGlobalExports(v8::Handle<v8::ObjectTemplate>& global);
-  bool initialize(v8::TryCatch& try_catch, v8::Handle<v8::ObjectTemplate>& global);
+  bool initGlobalExports(v8::Isolate* isolate, v8::Handle<v8::ObjectTemplate>& global);
+  bool initialize(v8::Isolate* isolate, v8::TryCatch& try_catch, v8::Handle<v8::ObjectTemplate>& global);
   
   InternalModules& getInternalModules();
   ModuleHelpers& getModuleHelpers();
@@ -64,7 +64,7 @@ public:
 protected:
   void registerInternalModule(const Module& module);
   void registerModuleHelper(const Module& module);
-  bool compileModuleHelpers(v8::TryCatch& try_catch, v8::Handle<v8::ObjectTemplate>& global);
+  bool compileModuleHelpers(v8::Isolate* isolate, v8::TryCatch& try_catch, v8::Handle<v8::ObjectTemplate>& global);
   
   InternalModules _modules;
   ModuleHelpers _moduleHelpers;

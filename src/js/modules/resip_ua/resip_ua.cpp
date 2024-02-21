@@ -108,9 +108,9 @@ static ResipLogger _logger;
 
 JS_METHOD_IMPL(set_log_level)
 {
-  js_method_arg_declare_int32(level, 0);
+  js_method_declare_int32(level, 0);
   Log::initialize(Log::OnlyExternalNoHeaders, (Log::Level)level, "oss_core", _logger);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_EXPORTS_INIT()

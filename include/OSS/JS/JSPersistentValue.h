@@ -88,7 +88,7 @@ public:
   {
     if (!_value.IsEmpty())
     {
-      _value.Dispose();
+      _value.Reset();
     }
   }
   

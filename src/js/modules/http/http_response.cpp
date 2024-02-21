@@ -67,166 +67,166 @@ HttpResponseObject::~HttpResponseObject()
 JS_CONSTRUCTOR_IMPL(HttpResponseObject)
 {
   HttpResponseObject* pObject = new HttpResponseObject();
-  pObject->Wrap(js_method_arg_self());
-  return js_method_arg_self();
+  pObject->Wrap(js_method_self());
+  js_method_set_return_self();
 }
 
 JS_METHOD_IMPL(HttpResponseObject::setStatus)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  js_method_arg_declare_uint32(status, 0);
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_declare_uint32(status, 0);
   pObject->_response->setStatus((Status)status);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
   
 JS_METHOD_IMPL(HttpResponseObject::getStatus)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  return JSInt32(pObject->_response->getStatus());
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_set_return_handle(js_method_int32(pObject->_response->getStatus()));
 }
 
 JS_METHOD_IMPL(HttpResponseObject::setReason)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  js_method_arg_declare_string(reason, 0);
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_declare_string(reason, 0);
   pObject->_response->setReason(reason);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpResponseObject::getReason)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  return JSString(pObject->_response->getReason());
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_set_return_string(pObject->_response->getReason());
 }
 
 JS_METHOD_IMPL(HttpResponseObject::setVersion)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  js_method_arg_assert_size_eq(1);
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string value = js_method_arg_as_std_string(0);
   pObject->_response->setVersion(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpResponseObject::getVersion)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  return JSString(pObject->_response->getVersion());
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_set_return_string(pObject->_response->getVersion());
 }
 
 JS_METHOD_IMPL(HttpResponseObject::setContentLength)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  js_method_arg_declare_uint32(contentLength, 0);
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_declare_uint32(contentLength, 0);
   pObject->_response->setContentLength(contentLength);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpResponseObject::getContentLength)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  return JSUInt32(pObject->_response->getContentLength());
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_set_return_handle(js_method_uint32(pObject->_response->getContentLength()));
 }
 
 JS_METHOD_IMPL(HttpResponseObject::setTransferEncoding)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  js_method_arg_assert_size_eq(1);
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string value = js_method_arg_as_std_string(0);
   pObject->_response->setTransferEncoding(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpResponseObject::getTransferEncoding)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  return JSString(pObject->_response->getTransferEncoding());
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_set_return_string(pObject->_response->getTransferEncoding());
 }
 
 JS_METHOD_IMPL(HttpResponseObject::setChunkedTransferEncoding)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  js_method_arg_declare_bool(flag, 0);
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_declare_bool(flag, 0);
   pObject->_response->setChunkedTransferEncoding(flag);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpResponseObject::getChunkedTransferEncoding)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  return JSBoolean(pObject->_response->getChunkedTransferEncoding());
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_set_return_boolean(pObject->_response->getChunkedTransferEncoding());
 }
 
 JS_METHOD_IMPL(HttpResponseObject::setContentType)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  js_method_arg_assert_size_eq(1);
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string value = js_method_arg_as_std_string(0);
   pObject->_response->setContentType(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpResponseObject::getContentType)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  return JSString(pObject->_response->getContentType());
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_set_return_string(pObject->_response->getContentType());
 }
 
 JS_METHOD_IMPL(HttpResponseObject::setKeepAlive)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  js_method_arg_declare_bool(flag, 0);
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_declare_bool(flag, 0);
   pObject->_response->setKeepAlive(flag);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpResponseObject::getKeepAlive)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
-  return JSBoolean(pObject->_response->getKeepAlive());
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  js_method_set_return_boolean(pObject->_response->getKeepAlive());
 }
 
 JS_METHOD_IMPL(getReasonForStatus)
 {
-  js_method_arg_declare_uint32(status, 0);
-  return JSString(HttpResponseObject::Response::getReasonForStatus((HttpResponseObject::Status)status));
+  js_method_declare_uint32(status, 0);
+  js_method_set_return_string(HttpResponseObject::Response::getReasonForStatus((HttpResponseObject::Status)status));
 }
 
 JS_METHOD_IMPL(HttpResponseObject::reset)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
   delete pObject->_response;
   pObject->_response = new Response();
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpResponseObject::dispose)
 {
-  HttpResponseObject* pObject = js_method_arg_unwrap_self(HttpResponseObject);
-  js_assert(pObject && pObject->_response, "HTTP Response has been disposed");
+  HttpResponseObject* pObject = js_method_unwrap_self(HttpResponseObject);
+  js_method_assert(pObject && pObject->_response, "HTTP Response has been disposed");
   delete pObject->_response;
   pObject->_response = 0;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_EXPORTS_INIT()

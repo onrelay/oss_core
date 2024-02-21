@@ -47,10 +47,6 @@ class JSIsolate : public boost::enable_shared_from_this<JSIsolate>
 {
 public:
   typedef boost::shared_ptr<JSIsolate> Ptr;
-  typedef JSPersistentValue<v8::Context> Context;
-  typedef JSPersistentValue<v8::ObjectTemplate> ObjectTemplate;
-  typedef JSPersistentValue<v8::ObjectTemplate> Global;
-  typedef JSPersistentValue<v8::ObjectTemplate> GlobalTemplate;
   typedef JSInterIsolateCall::Request Request;
   typedef JSInterIsolateCall::Result Result;
   typedef boost::function<void(void*)> Task;
@@ -129,9 +125,9 @@ protected:
   
   void internal_run();
   
-  Context _context;
-  ObjectTemplate _objectTemplate;
-  GlobalTemplate _globalTemplate;
+  JSCopyablePersistentContextHandle _context;
+  JSCopyablePersistentObjectTemplateHandle _objectTemplate;
+  JSCopyablePersistentObjectTemplateHandle _globalTemplate;
   
   v8::Isolate* _pIsolate;
   JSModule* _pModuleManager;

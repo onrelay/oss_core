@@ -32,63 +32,60 @@
 #include "OSS/UTL/Semaphore.h"
 
 
-typedef v8::Persistent<v8::Function> PersistentFunction;
-typedef std::vector< v8::Persistent<v8::Value> > ArgumentVector;
-
 static bool _enableAsync = false;
 static OSS::Semaphore* _exitSem = 0;
 static OSS::UInt64  _garbageCollectionFrequency = 30; /// 30 seconds default
 pthread_t Async::_threadId = 0;
-v8::Persistent<v8::ObjectTemplate> Async::_externalPointerTemplate;
+JSCopyablePersistentObjectTemplateHandle Async::_externalPointerTemplate;
 
-static v8::Handle<v8::Value> __call(const v8::Arguments& args)
+JS_METHOD_IMPL(__call)
 {
-  v8::HandleScope scope;
-  if (args.Length() != 3 || !args[0]->IsFunction() || !args[1]->IsArray() || !args[2]->IsFunction())
+  js_method_enter_scope();
+  if (_args_.Length() != 3 || !_args_[0]->IsFunction() || !_args_[1]->IsArray() || !_args_[2]->IsFunction())
   {
-    return v8::ThrowException(v8::Exception::TypeError(v8::String::New("Invalid Argument")));
+    js_method_throw("Invalid Argument");
   }
   
   js_method_declare_isolate(pIsolate);
-  pIsolate->eventLoop()->functionCallback().execute(args[0], args[1], args[2]);
+  pIsolate->eventLoop()->functionCallback().execute(_args_[0], _args_[1], _args_[2]);
   _enableAsync = true;
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> __schedule_one_shot_timer(const v8::Arguments& args)
+JS_METHOD_IMPL(__schedule_one_shot_timer)
 {
-  v8::HandleScope scope;
-  if (args.Length() < 2 || !args[0]->IsFunction() || !args[1]->IsInt32())
+  js_method_enter_scope();
+  if (_args_.Length() < 2 || !_args_[0]->IsFunction() || !_args_[1]->IsInt32())
   {
-    return v8::ThrowException(v8::Exception::TypeError(v8::String::New("Invalid Argument")));
+    js_method_throw("Invalid Argument");
   }
-  int expire = args[1]->ToInt32()->Value();
+  int expire = _args_[1]->Int32Value(js_method_context()).ToChecked();
   
   js_method_declare_isolate(pIsolate);
   int timerId = 0;
-  if (args.Length() >= 3)
+  if (_args_.Length() >= 3)
   {
-    timerId = pIsolate->eventLoop()->timerManager().scheduleTimer(expire, args[0], args[2]);
+    timerId = pIsolate->eventLoop()->timerManager().scheduleTimer(expire, _args_[0], _args_[2]);
   }
   else
   {
-    timerId = pIsolate->eventLoop()->timerManager().scheduleTimer(expire, args[0]);
+    timerId = pIsolate->eventLoop()->timerManager().scheduleTimer(expire, _args_[0]);
   }
   _enableAsync = true;
   
-  return v8::Int32::New(timerId);
+  js_method_set_return_handle(js_method_int32(timerId));
 }
 
-static v8::Handle<v8::Value> __cancel_one_shot_timer(const v8::Arguments& args)
+JS_METHOD_IMPL(__cancel_one_shot_timer)
 {
-  v8::HandleScope scope;
-  if (args.Length() < 1 || !args[0]->IsInt32())
+  js_method_enter_scope();
+  if (_args_.Length() < 1 || !_args_[0]->IsInt32())
   {
-    return v8::ThrowException(v8::Exception::TypeError(v8::String::New("Invalid Argument")));
+    js_method_throw("Invalid Argument");
   }
-  int32_t timerId = args[0]->ToInt32()->Value();
+  int32_t timerId = _args_[0]->Int32Value(js_method_context()).ToChecked();
   Async::clear_timer(timerId);
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
 void Async::clear_timer(int timerId)
@@ -109,21 +106,21 @@ void Async::__wakeup_pipe(OSS::JS::JSIsolate* pIsolate)
   }
 }
 
-static v8::Handle<v8::Value> __monitor_descriptor(const v8::Arguments& args)
+JS_METHOD_IMPL(__monitor_descriptor)
 {
-  v8::HandleScope scope;
-  if (args.Length() < 2 || !args[0]->IsInt32() || !args[1]->IsFunction())
+  js_method_enter_scope();
+  if (_args_.Length() < 2 || !_args_[0]->IsInt32() || !_args_[1]->IsFunction())
   {
-    return v8::ThrowException(v8::Exception::TypeError(v8::String::New("Invalid Argument")));
+    js_method_throw("Invalid Argument");
   }
 
   _enableAsync = true;
   
   js_method_declare_isolate(pIsolate);
   OSS::JS::JSEventLoop* pEventLoop = pIsolate->eventLoop();
-  pEventLoop->fdManager().addFileDescriptor(args[0]->ToInt32()->Value(), args[1], POLLIN);
+  pEventLoop->fdManager().addFileDescriptor(js_method_isolate(), _args_[0]->Int32Value(js_method_context()).ToChecked(), _args_[1], POLLIN);
   Async::__wakeup_pipe();
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 void Async::unmonitor_fd(const OSS::JS::JSIsolate::Ptr& pIsolate, int fd)
 {
@@ -133,25 +130,25 @@ void Async::unmonitor_fd(const OSS::JS::JSIsolate::Ptr& pIsolate, int fd)
   }
 }
 
-static v8::Handle<v8::Value> __unmonitor_descriptor(const v8::Arguments& args)
+JS_METHOD_IMPL(__unmonitor_descriptor)
 {
-  v8::HandleScope scope;
-  if (args.Length() < 1 || !args[0]->IsInt32())
+  js_method_enter_scope();
+  if (_args_.Length() < 1 || !_args_[0]->IsInt32())
   {
-    return v8::ThrowException(v8::Exception::TypeError(v8::String::New("Invalid Argument")));
+    js_method_throw("Invalid Argument");
   }
   js_method_declare_isolate(pIsolate);
-  int fd = args[0]->ToInt32()->Value();
+  int fd = _args_[0]->Int32Value(js_method_context()).ToChecked();
   Async::unmonitor_fd(pIsolate, fd);
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(__set_promise_callback)
 {
-  js_method_arg_declare_persistent_function(func, 0);
+  js_method_declare_copyable_persistent_function(func, 0);
   OSS::JS::JSIsolate::getIsolate()->eventLoop()->interIsolate().setHandler(func);
   _enableAsync = true;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 bool Async::json_execute_promise(OSS::JS::JSIsolate* pIsolate, const OSS::JSON::Object& request, OSS::JSON::Object& reply, uint32_t timeout, void* promiseData)
@@ -160,26 +157,26 @@ bool Async::json_execute_promise(OSS::JS::JSIsolate* pIsolate, const OSS::JSON::
 }
 
 
-static v8::Handle<v8::Value> __stop_event_loop(const v8::Arguments& args)
+JS_METHOD_IMPL(__stop_event_loop)
 {
-  v8::HandleScope scope;
+  js_method_enter_scope();
   OSS::JS::JSIsolate::getIsolate()->eventLoop()->terminate();
   Async::__wakeup_pipe();
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> __set_garbage_collection_frequency(const v8::Arguments& args)
+JS_METHOD_IMPL(__set_garbage_collection_frequency)
 {
-  v8::HandleScope scope;
-  if (args.Length() == 0 || !args[0]->IsInt32())
+  js_method_enter_scope();
+  if (_args_.Length() == 0 || !_args_[0]->IsInt32())
   {
-    return v8::ThrowException(v8::Exception::TypeError(v8::String::New("Invalid Argument")));
+    js_method_throw("Invalid Argument");
   }
-  _garbageCollectionFrequency = args[0]->ToInt32()->Value();
-  return v8::Undefined();
+  _garbageCollectionFrequency = _args_[0]->Int32Value(js_method_context()).ToChecked();
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> __process_events(const v8::Arguments& args)
+JS_METHOD_IMPL(__process_events)
 {
   Async::_threadId = pthread_self();
   
@@ -202,7 +199,7 @@ static v8::Handle<v8::Value> __process_events(const v8::Arguments& args)
   {
     _exitSem->signal();
   }
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
 JS_EXPORTS_INIT()
@@ -223,9 +220,9 @@ JS_EXPORTS_INIT()
   //
   // Create the template we use to wrap C++ pointers
   //
-  v8::Handle<v8::ObjectTemplate> externalObjectTemplate = v8::ObjectTemplate::New();
+  JSObjectTemplateHandle externalObjectTemplate = v8::ObjectTemplate::New(js_method_isolate());
   externalObjectTemplate->SetInternalFieldCount(1);
-  Async::_externalPointerTemplate = v8::Persistent<v8::ObjectTemplate>::New(externalObjectTemplate);
+  Async::_externalPointerTemplate = JSCopyablePersistentObjectTemplateHandle(js_method_isolate(), externalObjectTemplate);
   
   js_export_finalize();
 }

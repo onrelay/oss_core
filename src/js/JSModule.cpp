@@ -36,39 +36,50 @@ namespace JS {
 
 boost::filesystem::path JSModule::_mainScript;
   
-static JSModule*get_current_module_manager()
+static JSModule* get_current_module_manager()
 {
   return JSIsolateManager::instance().getIsolate()->getModuleManager();
 }
   
-static v8::Handle<v8::Value> js_include(const v8::Arguments& args) 
+static JS_METHOD_IMPL(js_include) 
 {
-  v8::HandleScope scope;
-  v8::TryCatch try_catch;
-  try_catch.SetVerbose(true);
+  js_method_enter_scope();
+  js_method_try_catch();
+  _try_catch_.SetVerbose(true);
   
-  for (int i = 0; i < args.Length(); i++) 
+  for (int i = 0; i < _args_.Length(); i++) 
   {
-    std::string fileName = string_from_js_value(args[i]);
+    std::string fileName = string_from_js_value(js_method_isolate(), _args_[i]);
     if (boost::filesystem::exists(fileName))
     {
-      v8::Handle<v8::String>  script = read_file(fileName);
-      v8::Handle<v8::Script> compiled = v8::Script::Compile(script);
-      v8::Handle<v8::Value> result = compiled->Run();
-      if (result.IsEmpty())
+      v8::Handle<v8::String> script = js_method_string( read_file(fileName) );
+      v8::MaybeLocal<v8::Script> maybeCompiled = v8::Script::Compile(js_method_context(),script);
+      if( maybeCompiled.IsEmpty() )
       {
         // The TryCatch above is still in effect and will have caught the error.
-        report_js_exception(try_catch, true);
-        return v8::Undefined();
+        report_js_exception(js_method_isolate(), _try_catch_, true);
+        js_method_set_return_undefined();
+        return;
       }
-      return result;
+      v8::Handle<v8::Script> compiled = maybeCompiled.ToLocalChecked();
+      v8::MaybeLocal<v8::Value> maybeResult = compiled->Run(js_method_context());
+      if (maybeResult.IsEmpty())
+      {
+        // The TryCatch above is still in effect and will have caught the error.
+        report_js_exception(js_method_isolate(), _try_catch_, true);
+        js_method_set_return_undefined();
+        return;
+      }
+      v8::Handle<v8::Value> result = maybeResult.ToLocalChecked();
+      js_method_set_return_handle( result );
+      return;
     }
     else
     {
       OSS_LOG_ERROR("Unable to locate external script " << fileName);
     }
   }
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
 static bool module_path_exists(const std::string& canonicalName, std::string& absolutePath)
@@ -169,10 +180,10 @@ static bool module_path_exists(const std::string& canonicalName, std::string& ab
 
 JS_METHOD_IMPL(__add_module_directory) 
 {
-  v8::HandleScope scope;
-  js_method_arg_declare_string(path, 0);
+  js_method_enter_scope();
+  js_method_declare_string(path, 0);
   get_current_module_manager()->setModulesDir(path);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 static std::string get_plugin_canonical_file_name(const std::string& fileName)
@@ -266,151 +277,182 @@ static std::string get_module_canonical_file_name(const std::string& fileName)
   return get_plugin_canonical_file_name(fileName);
 }
 
-static v8::Handle<v8::Value> js_get_module_cononical_file_name(const v8::Arguments& args) 
+static JS_METHOD_IMPL(js_get_module_cononical_file_name) 
 {
-  if (args.Length() < 1)
+  if (_args_.Length() < 1)
   {
-    return v8::Undefined();
+    js_method_set_return_undefined();
+    return;
   }
-  v8::HandleScope scope;
-  v8::TryCatch try_catch;
-  try_catch.SetVerbose(true);
-  std::string fileName = string_from_js_value(args[0]);
+  js_method_enter_scope();
+  js_method_try_catch();
+  _try_catch_.SetVerbose(true);
+  std::string fileName = string_from_js_value(js_method_isolate(), _args_[0]);
   std::string canonical = get_module_canonical_file_name(fileName);
   if (canonical.empty())
   {
-    return v8::Undefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return v8::String::New(canonical.c_str());
+  js_method_set_return_string(canonical.c_str());
 }
 
-static v8::Handle<v8::Value> js_load_plugin(const v8::Arguments& args) 
+static JS_METHOD_IMPL(js_load_plugin) 
 {
-  if (args.Length() < 1)
+  if (_args_.Length() < 1)
   {
-    return v8::Undefined();
+    js_method_set_return_undefined();
+    return;
   }
-  v8::HandleScope scope;
-  v8::TryCatch try_catch;
-  try_catch.SetVerbose(true);
-  std::string fileName = string_from_js_value(args[0]);
+  js_method_enter_scope();
+  js_method_try_catch();
+  _try_catch_.SetVerbose(true);
+  std::string fileName = string_from_js_value(js_method_isolate(), _args_[0]);
   js_method_declare_isolate(pIsolate);
   JSPlugin* pPlugin = pIsolate->getPluginManager()->loadPlugin(fileName);
   if (!pPlugin)
   {
-    return v8::Undefined();
+    js_method_set_return_undefined();
+    return;
   }
   
   std::string exportFunc;
-  if (pPlugin->initExportFunc(exportFunc))
+  if (pPlugin->initExportFunc(js_method_isolate(), exportFunc))
   {
-    v8::Handle<v8::String> func_name = v8::String::New(exportFunc.c_str());
-    return js_get_global()->Get(func_name);
+    JSStringHandle func_name = js_method_string(exportFunc.c_str());
+    js_method_set_return_handle(js_method_global()->Get(js_method_context(),func_name).ToLocalChecked());
+    return;
   }
   
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> js_get_module_script(const v8::Arguments& args) 
+static JS_METHOD_IMPL(js_get_module_script) 
 {
-  if (args.Length() < 1)
+  if (_args_.Length() < 1)
   {
-    return v8::Undefined();
+    js_method_set_return_undefined();
+    return;
   }
   
-  v8::HandleScope scope;
-  v8::TryCatch try_catch;
-  try_catch.SetVerbose(true);
+  js_method_enter_scope();
+  js_method_try_catch();
+  _try_catch_.SetVerbose(true);
 
-  std::string fileName = string_from_js_value(args[0]);
+  std::string fileName = string_from_js_value(js_method_isolate(), _args_[0]);
   
   JSModule::InternalModules& modules = get_current_module_manager()->getInternalModules();
   JSModule::InternalModules::iterator iter = modules.find(fileName);
   if (iter != modules.end())
   {
-    return v8::Handle<v8::String>(v8::String::New(iter->second.script.c_str()));
+    js_method_set_return_string(iter->second.script);
+    return;
   }
   
   if (boost::filesystem::exists(fileName))
   {
-    return read_file(fileName);
+    js_method_set_return_string(read_file(fileName));
+    return;
   }
   else
   {
     OSS_LOG_ERROR("Unable to locate module " << fileName);
   }
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> js_compile(const v8::Arguments& args)
+static JS_METHOD_IMPL(js_compile)
 {
-  if (args.Length() < 1)
+  if (_args_.Length() < 1)
   {
-    return v8::Undefined();
+    js_method_set_return_undefined();
+    return;
   }
-  v8::HandleScope scope;
-  v8::TryCatch try_catch;
-  try_catch.SetVerbose(true);
+  js_method_enter_scope();
+  js_method_try_catch();
+  _try_catch_.SetVerbose(true);
   
-  v8::Handle<v8::String> script = v8::Handle<v8::String>::Cast(args[0]);
-  v8::Handle<v8::Script> compiled = v8::Script::Compile(script, args[1]);
-  
-  v8::Handle<v8::Value> result = compiled->Run();
-  if (result.IsEmpty())
+  v8::Handle<v8::String> script = v8::Handle<v8::String>::Cast(_args_[0]);
+  v8::ScriptOrigin name(JSStringHandle::Cast(_args_[1]));
+  v8::MaybeLocal<v8::Script> maybeCompiled = v8::Script::Compile(js_method_context(),script, &name);
+  if( maybeCompiled.IsEmpty() )
   {
     // The TryCatch above is still in effect and will have caught the error.
-    report_js_exception(try_catch, true);
-    return v8::Undefined();
+    report_js_exception(js_method_isolate(), _try_catch_, true);
+    js_method_set_return_undefined();
+    return;
   }
-  return result;
+  v8::Handle<v8::Script> compiled = maybeCompiled.ToLocalChecked();
+  v8::MaybeLocal<v8::Value> maybeResult = compiled->Run(js_method_context());
+  if (maybeResult.IsEmpty())
+  {
+    // The TryCatch above is still in effect and will have caught the error.
+    report_js_exception(js_method_isolate(), _try_catch_, true);
+    js_method_set_return_undefined();
+    return;
+  }
+  v8::Handle<v8::Value> result = maybeResult.ToLocalChecked();
+  js_method_set_return_handle( result );
 }
 
-static v8::Handle<v8::Value> js_compile_module(const v8::Arguments& args)
+static JS_METHOD_IMPL(js_compile_module)
 {
-  if (args.Length() < 1)
+  if (_args_.Length() < 1)
   {
-    return v8::Undefined();
+    js_method_set_return_undefined();
+    return;
   }
-  v8::HandleScope scope;
-  v8::TryCatch try_catch;
-  try_catch.SetVerbose(true);
+  js_method_enter_scope();
+  js_method_try_catch();
+  _try_catch_.SetVerbose(true);
   
   std::ostringstream strm;
   strm << "( function(module, exports) {";
   strm << "\"use-strict\";";
   strm << "try {";
-  strm << string_from_js_value(args[0]);
+  strm << string_from_js_value(js_method_isolate(), _args_[0]);
   strm << "} catch(e) { e.printStackTrace(); }";
   strm << "});";
 
-  v8::Handle<v8::String> script(v8::String::New(strm.str().c_str())); 
-  v8::Handle<v8::Script> compiled = v8::Script::New(script, args[1]);
-  
-  std::string fileName = *v8::String::Utf8Value(args[1]);
+  JSStringHandle script = js_method_string(strm.str()); 
+  //v8::Handle<v8::Script> compiled = v8::Script::New(script, name); // changed in V8 3.25
+  v8::ScriptOrigin name(JSStringHandle::Cast(_args_[1]));
+  v8::MaybeLocal<v8::Script> maybeCompiled = v8::Script::Compile(js_method_context(),script, &name);
+  if( maybeCompiled.IsEmpty() )
+  {
+    // The TryCatch above is still in effect and will have caught the error.
+    report_js_exception(js_method_isolate(), _try_catch_, true);
+    js_method_set_return_undefined();
+    return;
+  }
+  v8::Handle<v8::Script> compiled = maybeCompiled.ToLocalChecked();
+
+  std::string fileName = *v8::String::Utf8Value(js_method_isolate(),_args_[1]);
   boost::filesystem::path path(fileName.c_str());
   boost::filesystem::path parent_path = path.parent_path();
   boost::filesystem::path current_path = boost::filesystem::current_path();
-  v8::Handle<v8::Value> result = compiled->Run();
-
-  if (result.IsEmpty())
+  v8::MaybeLocal<v8::Value> maybeResult = compiled->Run(js_method_context());
+  if (maybeResult.IsEmpty())
   {
     // The TryCatch above is still in effect and will have caught the error.
-    report_js_exception(try_catch, true);
-    return v8::Undefined();
+    report_js_exception(js_method_isolate(), _try_catch_, true);
+    js_method_set_return_undefined();
+    return;
   }
-  return result;
+  v8::Handle<v8::Value> result = maybeResult.ToLocalChecked();
+  js_method_set_return_handle( result );
 }
 
 JS_METHOD_IMPL(js_lock_isolate)
 {
   JSIsolateManager::instance().modulesMutex().lock();
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(js_unlock_isolate)
 {
   JSIsolateManager::instance().modulesMutex().unlock();
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JSModule::JSModule(JSIsolate* pIsolate) :
@@ -423,7 +465,7 @@ JSModule::~JSModule()
 {
 }
 
-bool JSModule::initialize(v8::TryCatch& try_catch, v8::Handle<v8::ObjectTemplate>& global)
+bool JSModule::initialize(v8::Isolate* isolate, v8::TryCatch& try_catch, v8::Handle<v8::ObjectTemplate>& global)
 {
   //
   // Register the helpers
@@ -434,7 +476,7 @@ bool JSModule::initialize(v8::TryCatch& try_catch, v8::Handle<v8::ObjectTemplate
     #include "js/OSSJS_modules.js.h"
   );
   registerModuleHelper(modules_js);
-  return compileModuleHelpers(try_catch, global);
+  return compileModuleHelpers(isolate, try_catch, global);
 }
 
 void JSModule::registerInternalModule(const Module& module)
@@ -450,61 +492,72 @@ void JSModule::registerModuleHelper(const Module& module)
 
 JS_METHOD_IMPL(__chdir)
 {
-  js_enter_scope();
-  js_method_arg_assert_size_eq(1);
+  js_method_enter_scope();
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string dir = js_method_arg_as_std_string(0);
-  return JSInt32(chdir(dir.c_str()));
+  js_method_set_return_handle(js_method_int32(chdir(dir.c_str())));
 }
 
 JS_METHOD_IMPL(__current_path)
 {
-  js_enter_scope();
+  js_method_enter_scope();
   boost::filesystem::path path = boost::filesystem::current_path();
-  return JSString(OSS::boost_path(path).c_str());
+  js_method_set_return_string(OSS::boost_path(path).c_str());
 }
 
 JS_METHOD_IMPL(__parent_path)
 {
-  js_enter_scope();
-  js_method_arg_assert_size_eq(1);
+  js_method_enter_scope();
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string pathStr = js_method_arg_as_std_string(0);
   boost::filesystem::path path(pathStr.c_str());
   boost::filesystem::path parent = path.parent_path();
-  return JSString(OSS::boost_path(parent).c_str());
+  js_method_set_return_string(OSS::boost_path(parent).c_str());
 }
 
-bool JSModule::initGlobalExports(v8::Handle<v8::ObjectTemplate>& global)
+bool JSModule::initGlobalExports(v8::Isolate* isolate, v8::Handle<v8::ObjectTemplate>& global)
 {
-  global->Set(v8::String::New("__include"), v8::FunctionTemplate::New(js_include));
-  global->Set(v8::String::New("__compile"), v8::FunctionTemplate::New(js_compile));
-  global->Set(v8::String::New("__compile_module"), v8::FunctionTemplate::New(js_compile_module));
-  global->Set(v8::String::New("__get_module_script"), v8::FunctionTemplate::New(js_get_module_script));
-  global->Set(v8::String::New("__get_module_cononical_file_name"), v8::FunctionTemplate::New(js_get_module_cononical_file_name));
-  global->Set(v8::String::New("__load_plugin"), v8::FunctionTemplate::New(js_load_plugin));
-  global->Set(v8::String::New("__current_path"), v8::FunctionTemplate::New(__current_path));
-  global->Set(v8::String::New("__parent_path"), v8::FunctionTemplate::New(__parent_path));
-  global->Set(v8::String::New("__chdir"), v8::FunctionTemplate::New(__chdir));
-  global->Set(v8::String::New("__lock_isolate"), v8::FunctionTemplate::New(js_lock_isolate));
-  global->Set(v8::String::New("__unlock_isolate"), v8::FunctionTemplate::New(js_unlock_isolate));
-  global->Set(v8::String::New("__add_module_directory"), v8::FunctionTemplate::New(__add_module_directory));
+  global->Set(JSString(isolate,"__include"), JSFunctionTemplate(isolate,js_include));
+  global->Set(JSString(isolate,"__compile"), JSFunctionTemplate(isolate,js_compile));
+  global->Set(JSString(isolate,"__compile_module"), JSFunctionTemplate(isolate,js_compile_module));
+  global->Set(JSString(isolate,"__get_module_script"), JSFunctionTemplate(isolate,js_get_module_script));
+  global->Set(JSString(isolate,"__get_module_cononical_file_name"), JSFunctionTemplate(isolate,js_get_module_cononical_file_name));
+  global->Set(JSString(isolate,"__load_plugin"), JSFunctionTemplate(isolate,js_load_plugin));
+  global->Set(JSString(isolate,"__current_path"), JSFunctionTemplate(isolate,__current_path));
+  global->Set(JSString(isolate,"__parent_path"), JSFunctionTemplate(isolate,__parent_path));
+  global->Set(JSString(isolate,"__chdir"), JSFunctionTemplate(isolate,__chdir));
+  global->Set(JSString(isolate,"__lock_isolate"), JSFunctionTemplate(isolate,js_lock_isolate));
+  global->Set(JSString(isolate,"__unlock_isolate"), JSFunctionTemplate(isolate,js_unlock_isolate));
+  global->Set(JSString(isolate,"__add_module_directory"), JSFunctionTemplate(isolate,__add_module_directory));
   return true;
 }
 
-bool JSModule::compileModuleHelpers(v8::TryCatch& try_catch, v8::Handle<v8::ObjectTemplate>& global)
+bool JSModule::compileModuleHelpers(v8::Isolate* isolate, v8::TryCatch& try_catch, v8::Handle<v8::ObjectTemplate>& global)
 {
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+
   for (ModuleHelpers::iterator iter = _moduleHelpers.begin(); iter != _moduleHelpers.end(); iter++)
   {
-    v8::Handle<v8::String> script(v8::String::New(iter->script.c_str()));
-    v8::Handle<v8::Value> name(v8::String::New(iter->name.c_str()));
-    v8::Handle<v8::Script> compiled = v8::Script::Compile(script, name);
-    v8::Handle<v8::Value> result = compiled->Run();
-    if (result.IsEmpty())
+    v8::Handle<v8::String> script(JSString(isolate,iter->script));
+    v8::ScriptOrigin name(JSString(isolate,iter->name));
+    v8::MaybeLocal<v8::Script> maybeCompiled = v8::Script::Compile(context,script, &name);
+    if( maybeCompiled.IsEmpty() )
     {
       OSS_LOG_ERROR("JSModule::compileModuleHelpers is unable to compile " << iter->name);
       // The TryCatch above is still in effect and will have caught the error.
-      report_js_exception(try_catch, true);
+      report_js_exception(isolate, try_catch, true);
+      return false;
+    }
+    v8::Handle<v8::Script> compiled = maybeCompiled.ToLocalChecked();
+
+    v8::MaybeLocal<v8::Value> maybeResult = compiled->Run(context);
+    if (maybeResult.IsEmpty())
+    {
+      OSS_LOG_ERROR("JSModule::compileModuleHelpers is unable to run " << iter->name);
+      // The TryCatch above is still in effect and will have caught the error.
+      report_js_exception(isolate, try_catch, true);
       return false;
     }
   } 

@@ -31,7 +31,7 @@
 
 using OSS::JS::JSObjectWrap;
 
-#define assert_session(Self) if (!Self->_session) { js_throw("Client session has been disposed"); }
+#define assert_session(Self) if (!Self->_session) { js_method_throw("Client session has been disposed"); }
 //
 // Define the Interface
 //
@@ -84,7 +84,7 @@ HttpClientObject::~HttpClientObject()
 
 JS_CONSTRUCTOR_IMPL(HttpClientObject)
 {
-  js_method_arg_declare_bool(isSecure, 0);
+  js_method_declare_bool(isSecure, 0);
   HttpClientObject* pClient = 0;
   try
   {
@@ -94,108 +94,108 @@ JS_CONSTRUCTOR_IMPL(HttpClientObject)
   {
     if (isSecure)
     {
-      js_throw("Unable to create secure client.  Check SSL context");
+      js_method_throw("Unable to create secure client.  Check SSL context");
     }
     else
     {
-      js_throw(e.message().c_str());
+      js_method_throw(e.message().c_str());
     }
   }
-  pClient->Wrap(js_method_arg_self());
-  return js_method_arg_self();
+  pClient->Wrap(js_method_self());
+  js_method_set_return_handle(js_method_self());
 }
 
 JS_METHOD_IMPL(HttpClientObject::setHost)
 {
-  HttpClientObject* pClient = js_method_arg_unwrap_self(HttpClientObject);
+  HttpClientObject* pClient = js_method_unwrap_self(HttpClientObject);
   assert_session(pClient);
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string value = js_method_arg_as_std_string(0);
   pClient->_session->setHost(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpClientObject::getHost)
 {
-  HttpClientObject* pClient = js_method_arg_unwrap_self(HttpClientObject);
+  HttpClientObject* pClient = js_method_unwrap_self(HttpClientObject);
   assert_session(pClient);
-  return JSString(pClient->_session->getHost());
+  js_method_set_return_string(pClient->_session->getHost());
 }
 
 JS_METHOD_IMPL(HttpClientObject::setPort)
 {
-  HttpClientObject* pClient = js_method_arg_unwrap_self(HttpClientObject);
+  HttpClientObject* pClient = js_method_unwrap_self(HttpClientObject);
   assert_session(pClient);
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_uint32(0);
   uint32_t value = js_method_arg_as_uint32(0);
   pClient->_session->setPort(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpClientObject::getPort)
 {
-  HttpClientObject* pClient = js_method_arg_unwrap_self(HttpClientObject);
+  HttpClientObject* pClient = js_method_unwrap_self(HttpClientObject);
   assert_session(pClient);
-  return JSUInt32(pClient->_session->getPort());
+  js_method_set_return_handle(js_method_uint32(pClient->_session->getPort()));
 }
 
 JS_METHOD_IMPL(HttpClientObject::setProxyHost)
 {
-  HttpClientObject* pClient = js_method_arg_unwrap_self(HttpClientObject);
+  HttpClientObject* pClient = js_method_unwrap_self(HttpClientObject);
   assert_session(pClient);
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string value = js_method_arg_as_std_string(0);
   pClient->_session->setProxyHost(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpClientObject::setProxyPort)
 {
-  HttpClientObject* pClient = js_method_arg_unwrap_self(HttpClientObject);
+  HttpClientObject* pClient = js_method_unwrap_self(HttpClientObject);
   assert_session(pClient);
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_uint32(0);
   uint32_t value = js_method_arg_as_uint32(0);
   pClient->_session->setProxyPort(value);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpClientObject::getProxyHost)
 {
-  HttpClientObject* pClient = js_method_arg_unwrap_self(HttpClientObject);
+  HttpClientObject* pClient = js_method_unwrap_self(HttpClientObject);
   assert_session(pClient);
-  return JSString(pClient->_session->getProxyHost());
+  js_method_set_return_string(pClient->_session->getProxyHost());
 }
 
 JS_METHOD_IMPL(HttpClientObject::getProxyPort)
 {
-  HttpClientObject* pClient = js_method_arg_unwrap_self(HttpClientObject);
+  HttpClientObject* pClient = js_method_unwrap_self(HttpClientObject);
   assert_session(pClient);
-  return JSUInt32(pClient->_session->getProxyPort());
+  js_method_set_return_handle(js_method_uint32(pClient->_session->getProxyPort()));
 }
 
 JS_METHOD_IMPL(HttpClientObject::setKeepAliveTimeout)
 {
-  HttpClientObject* pClient = js_method_arg_unwrap_self(HttpClientObject);
+  HttpClientObject* pClient = js_method_unwrap_self(HttpClientObject);
   assert_session(pClient);
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_uint32(0);
   uint32_t seconds = js_method_arg_as_uint32(0);
   Poco::Timespan timespan;
   timespan.assign(seconds, 0);
   pClient->_session->setKeepAliveTimeout(timespan);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpClientObject::getKeepAliveTimeout)
 {
-  HttpClientObject* pClient = js_method_arg_unwrap_self(HttpClientObject);
+  HttpClientObject* pClient = js_method_unwrap_self(HttpClientObject);
   assert_session(pClient);
   const Poco::Timespan& timespan = pClient->_session->getKeepAliveTimeout();
-  return JSUInt32(timespan.milliseconds() * 1000);
+  js_method_set_return_handle(js_method_uint32(timespan.milliseconds() * 1000));
 }
 
 class RequestSender : public Poco::Runnable
@@ -243,13 +243,13 @@ public:
 
 JS_METHOD_IMPL(HttpClientObject::sendRequest)
 {
-  js_method_arg_declare_self(HttpClientObject, self);
+  js_method_declare_self(HttpClientObject, self);
   assert_session(self);
-  js_method_arg_declare_external_object(HttpRequestObject, pRequest, 0);
+  js_method_declare_external_object(HttpRequestObject, pRequest, 0);
   
   if (self->getEventFd() == -1)
   {
-    js_throw("Event Emitter FD not set");
+    js_method_throw("Event Emitter FD not set");
   }
   
   RequestSender* runnable = new RequestSender(self, pRequest, self->getEventFd());
@@ -261,14 +261,14 @@ JS_METHOD_IMPL(HttpClientObject::sendRequest)
   catch(const NoThreadAvailableException& e)
   {
     delete runnable;
-    js_throw(e.message().c_str());
+    js_method_throw(e.message().c_str());
   }
   catch(...)
   {
     delete runnable;
-    js_throw("Unknown Exception");
+    js_method_throw("Unknown Exception");
   }
-  return JSUndefined();
+  js_method_set_return_undefined(); 
 }
 
 
@@ -315,13 +315,13 @@ public:
 
 JS_METHOD_IMPL(HttpClientObject::receiveResponse)
 {
-  js_method_arg_declare_self(HttpClientObject, self);
+  js_method_declare_self(HttpClientObject, self);
   assert_session(self);
-  js_method_arg_declare_external_object(HttpResponseObject, pResponse, 0);
+  js_method_declare_external_object(HttpResponseObject, pResponse, 0);
   
   if (self->getEventFd() == -1)
   {
-    js_throw("Event Emitter FD not set");
+    js_method_throw("Event Emitter FD not set");
   }
   
   ResponseReceiver* runnable = new ResponseReceiver(self, pResponse, self->getEventFd());
@@ -332,28 +332,28 @@ JS_METHOD_IMPL(HttpClientObject::receiveResponse)
   catch(const NoThreadAvailableException& e)
   {
     delete runnable;
-    js_throw(e.message().c_str());
+    js_method_throw(e.message().c_str());
   }
   catch(...)
   {
     delete runnable;
-    js_throw("Unknown Exception");
+    js_method_throw("Unknown Exception");
   }
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpClientObject::connected)
 {
-  HttpClientObject* pClient = js_method_arg_unwrap_self(HttpClientObject);
+  HttpClientObject* pClient = js_method_unwrap_self(HttpClientObject);
   assert_session(pClient);
-  return JSBoolean(pClient->_session->connected());
+  js_method_set_return_boolean(pClient->_session->connected());
 }
 
 JS_METHOD_IMPL(HttpClientObject::secure)
 {
-  HttpClientObject* pClient = js_method_arg_unwrap_self(HttpClientObject);
+  HttpClientObject* pClient = js_method_unwrap_self(HttpClientObject);
   assert_session(pClient);
-  return JSBoolean(pClient->_isSecure);
+  js_method_set_return_boolean(pClient->_isSecure);
 }
 
 class ResponseReader : public Poco::Runnable
@@ -399,10 +399,10 @@ public:
 
 JS_METHOD_IMPL(HttpClientObject::read)
 {
-  js_method_arg_declare_self(HttpClientObject, self);
+  js_method_declare_self(HttpClientObject, self);
   assert_session(self);
-  js_method_arg_declare_external_object(BufferObject, buf, 0);
-  js_method_arg_declare_uint32(size, 1);
+  js_method_declare_external_object(BufferObject, buf, 0);
+  js_method_declare_uint32(size, 1);
   
   if (self->_input)
   {
@@ -414,12 +414,12 @@ JS_METHOD_IMPL(HttpClientObject::read)
     catch(const NoThreadAvailableException& e)
     {
       delete runnable;
-      js_throw(e.message().c_str());
+      js_method_throw(e.message().c_str());
     }
     catch(...)
     {
       delete runnable;
-      js_throw("Unknown Exception");
+      js_method_throw("Unknown Exception");
     }
   }
   else
@@ -428,41 +428,41 @@ JS_METHOD_IMPL(HttpClientObject::read)
     json.addString("Input Stream Not Set");
     self->getIsolate()->eventLoop()->eventEmitter().emit(json);
   }
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpClientObject::write)
 {
-  js_method_arg_declare_self(HttpClientObject, self);
+  js_method_declare_self(HttpClientObject, self);
   assert_session(self);
-  js_method_arg_declare_external_object(BufferObject, buf, 0);
-  js_method_arg_declare_uint32(size, 1);
+  js_method_declare_external_object(BufferObject, buf, 0);
+  js_method_declare_uint32(size, 1);
   
   if (self->_output)
   {
     std::ostream& strm = *self->_output;
-    return JSBoolean(!strm.write((char*)buf->buffer().data(), size).fail());
+    js_method_set_return_boolean(!strm.write((char*)buf->buffer().data(), size).fail());
   }
   
-  return JSBoolean(false);
+  js_method_set_return_false();
 }
 
 JS_METHOD_IMPL(HttpClientObject::setEventFd)
 {
-  js_method_arg_declare_self(HttpClientObject, self);
+  js_method_declare_self(HttpClientObject, self);
   assert_session(self);
-  js_method_arg_declare_int32(fd, 0);
+  js_method_declare_int32(fd, 0);
   self->_eventFd = fd;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(HttpClientObject::dispose)
 {
-  js_method_arg_declare_self(HttpClientObject, self);
+  js_method_declare_self(HttpClientObject, self);
   assert_session(self);
   delete self->_session;
   self->_session = 0;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_EXPORTS_INIT()

@@ -23,64 +23,64 @@
 
 JS_METHOD_IMPL(__exists)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string filename = js_method_arg_as_std_string(0);
   boost::filesystem::path file(filename.c_str());
-  return JSBoolean(boost::filesystem::exists(file));
+  js_method_set_return_boolean(boost::filesystem::exists(file));
 }
 
 JS_METHOD_IMPL(__remove)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string filename = js_method_arg_as_std_string(0);
   boost::system::error_code ec;
   boost::filesystem::path file(filename.c_str());
-  return JSBoolean(boost::filesystem::remove(file, ec));
+  js_method_set_return_boolean(boost::filesystem::remove(file, ec));
 }
 
 JS_METHOD_IMPL(__remove_all)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string filename = js_method_arg_as_std_string(0);
   boost::system::error_code ec;
   boost::filesystem::path file(filename.c_str());
-  return JSUInt32(boost::filesystem::remove_all(file, ec));
+  js_method_set_return_handle(js_method_uint32(boost::filesystem::remove_all(file, ec)));
 }
 
 JS_METHOD_IMPL(__chdir)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string dir = js_method_arg_as_std_string(0);
-  return JSInt32(chdir(dir.c_str()));
+  js_method_set_return_handle(js_method_int32(chdir(dir.c_str())));
 }
 
 JS_METHOD_IMPL(__current_path)
 {
   boost::filesystem::path path = boost::filesystem::current_path();
-  return JSString(OSS::boost_path(path).c_str());
+  js_method_set_return_string(OSS::boost_path(path).c_str());
 }
 
 JS_METHOD_IMPL(__is_directory)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string dir = js_method_arg_as_std_string(0);
   boost::filesystem::path path(dir.c_str());
-  return JSBoolean(boost::filesystem::is_directory(path));
+  js_method_set_return_boolean(boost::filesystem::is_directory(path));
 }
 
 JS_METHOD_IMPL(__get_directory)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   std::string pathStr = js_method_arg_as_std_string(0);
   boost::filesystem::path path(pathStr.c_str());
   boost::filesystem::path parent = path.parent_path();
-  return JSString(OSS::boost_path(parent).c_str());
+  js_method_set_return_string(OSS::boost_path(parent).c_str());
 }
 
 JS_EXPORTS_INIT()

@@ -44,41 +44,60 @@ class JSObjectWrap {
     {
       return 0;
     }
-    return static_cast<T*>(handle->GetPointerFromInternalField(0));
+    return static_cast<T*>(handle->GetAlignedPointerFromInternalField(0));
   }
   
   template <class T>
-  static v8::Local<v8::FunctionTemplate> ExportConstructorTemplate(const char * className, v8::Handle<v8::Object>& exports)
+  static v8::Local<v8::FunctionTemplate> ExportConstructorTemplate(
+    v8::Isolate* isolate, 
+    const char * className, 
+    v8::Handle<v8::Object>& exports)
   {
-    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(T::New);
-    tpl->SetClassName(v8::String::NewSymbol(className));
-    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("ObjectType"), v8::String::NewSymbol(className));
+    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate,T::New);
+    tpl->SetClassName(v8::String::NewFromUtf8(isolate,className).ToLocalChecked());
+    tpl->PrototypeTemplate()->Set(
+      v8::String::NewFromUtf8(isolate,"ObjectType").ToLocalChecked(), 
+      v8::String::NewFromUtf8(isolate,className).ToLocalChecked());
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
     return tpl;
   }
   
   template <class T>
-  static void FinalizeConstructorTemplate(const char * className, v8::Local<v8::FunctionTemplate>& tpl, v8::Handle<v8::Object>& exports)
+  static void FinalizeConstructorTemplate(
+    v8::Isolate* isolate, 
+    const char * className, 
+    v8::Local<v8::FunctionTemplate>& tpl, 
+    v8::Handle<v8::Object>& exports)
   {
-    T::_constructor = v8::Persistent<v8::Function>::New(tpl->GetFunction());
-    exports->Set(v8::String::NewSymbol(className), T::_constructor);
+    v8::Local<v8::Function> constructorHandle = tpl->GetFunction(isolate->GetCurrentContext()).ToLocalChecked();
+
+    T::_constructor = v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>(isolate, constructorHandle);
+
+    exports->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate,className).ToLocalChecked(), constructorHandle);
+
   }
   
   template <class T>
-  static void ExportMethod(v8::Local<v8::FunctionTemplate>& tpl, const char* method,  v8::InvocationCallback callback)
+  static void ExportMethod(
+    v8::Isolate* isolate, 
+    v8::Local<v8::FunctionTemplate>& tpl, 
+    const char* method,  
+    v8::FunctionCallback callback)
   {
-    tpl->PrototypeTemplate()->Set(v8::String::NewSymbol(method), v8::FunctionTemplate::New(callback)->GetFunction());
+    tpl->PrototypeTemplate()->Set(
+      v8::String::NewFromUtf8(isolate,method).ToLocalChecked(), 
+      v8::FunctionTemplate::New(isolate,callback)->GetFunction(isolate->GetCurrentContext()).ToLocalChecked());
   }
   
   template <class T>
-  static void ExportIndexHandler(v8::Local<v8::FunctionTemplate>& tpl, v8::IndexedPropertyGetter getter,  v8::IndexedPropertySetter setter = 0)
+  static void ExportIndexHandler(v8::Isolate* isolate, v8::Local<v8::FunctionTemplate>& tpl, v8::IndexedPropertyGetterCallback getter,  v8::IndexedPropertySetterCallback setter = 0)
   {
     tpl->PrototypeTemplate()->SetIndexedPropertyHandler(getter, setter);
   }
  
   JSIsolate* getIsolate();
 
-  v8::Persistent<v8::Object> handle_; // ro
+  v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object>> handle_; // ro
 
  protected:
   void Wrap (v8::Handle<v8::Object> handle);
@@ -107,7 +126,7 @@ class JSObjectWrap {
   void* _pIsolatePtr;
 
  private:
-  static void WeakCallback (v8::Persistent<v8::Value> value, void *data);
+  static void WeakCallback(const v8::WeakCallbackInfo<JSObjectWrap>& data);
 };
 
 //

@@ -81,7 +81,10 @@ bool JSEventQueueManager::dequeue(int fd)
     if (pEvent)
     {
       QueueObject* pQueue = iter->second;
-      pQueue->_eventCallback->Call(js_get_global(), pEvent->_eventData.size(), pEvent->_eventData.data());
+      JSLocalArgumentVector eventData;
+      persistent_arg_vector_to_arg_vector(getIsolate()->getV8Isolate(),pEvent->_eventData, eventData);
+      JSFunctionHandle eventCallback = JSFunctionHandle::New(getIsolate()->getV8Isolate(),pQueue->_eventCallback);
+      eventCallback->Call(getIsolate()->getV8Isolate()->GetCurrentContext(), getIsolate()->getGlobal(), eventData.size(), eventData.data());
       return true;
     }
     return false;

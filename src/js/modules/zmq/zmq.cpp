@@ -25,7 +25,6 @@
 #include "OSS/UTL/Semaphore.h"
 
 using OSS::JS::JSObjectWrap;
-v8::Persistent<v8::Function> ZMQSocketObject::_constructor;
 boost::thread* ZMQSocketObject::_pPollThread;
 typedef std::list<ZMQSocketObject*> Sockets;
 static Sockets _socketList;
@@ -144,6 +143,7 @@ ZMQSocketObject::ZMQSocketObject(Socket::SocketType type) :
 {
   _pSocket = new Socket(type, _context);
   ::pipe(_pipe);
+
 }
 
 ZMQSocketObject::~ZMQSocketObject()
@@ -155,50 +155,53 @@ ZMQSocketObject::~ZMQSocketObject()
 }
 
 
-v8::Handle<v8::Value> ZMQSocketObject::New(const v8::Arguments& args)
+JS_CONSTRUCTOR_IMPL(ZMQSocketObject)
 {
-  v8::HandleScope scope;
-  if (args.Length() < 1 || !args[0]->IsInt32())
+  js_method_enter_scope();
+
+  if (_args_.Length() < 1 || !_args_[0]->IsInt32())
   {
-    return v8::ThrowException(v8::Exception::TypeError(v8::String::New("Invalid Argument.  Must provide socket type.")));
+    js_method_throw("Invalid Argument.  Must provide socket type.");
   }
-  ZMQSocketObject* pSocket = new ZMQSocketObject((Socket::SocketType)args[0]->ToInt32()->Value());
-  pSocket->Wrap(args.This());
+
+  ZMQSocketObject* pSocket = new ZMQSocketObject((Socket::SocketType)_args_[0]->Int32Value(js_method_context()).ToChecked());
+  pSocket->Wrap(js_method_self());
   
-  return args.This();
+  js_method_set_return_self();
 }
 
-static bool __get_string_arg(const v8::Arguments& args, std::string& value)
+static bool __get_string_arg(JSCallbackInfo _args_, std::string& value)
 {
-  v8::HandleScope scope;
-  if (args.Length() == 0 || !args[0]->IsString())
+  js_method_enter_scope();
+  if (_args_.Length() == 0 || !_args_[0]->IsString())
   {
     return false;
   }
-  value = *v8::String::Utf8Value(args[0]);
+  value = *v8::String::Utf8Value(js_method_isolate(),_args_[0]);
   return true;
 }
 
-static bool __get_buffer_arg(const v8::Arguments& args, std::string& value)
+static bool __get_buffer_arg(JSCallbackInfo _args_, std::string& value)
 {
-  v8::HandleScope scope;
-  if (args.Length() == 0 || !BufferObject::isBuffer(args[0]))
+  js_method_enter_scope();
+  if (_args_.Length() == 0 || !BufferObject::isBuffer(js_method_isolate(), _args_[0]))
   {
     return false;
   }
-  BufferObject* pBuffer = JSObjectWrap::Unwrap<BufferObject>(args[0]->ToObject());
+  BufferObject* pBuffer = JSObjectWrap::Unwrap<BufferObject>(_args_[0]->ToObject(js_method_context()).ToLocalChecked());
   std::copy(pBuffer->buffer().begin(), pBuffer->buffer().end(), std::back_inserter(value));
   return true;
 }
 
-v8::Handle<v8::Value> ZMQSocketObject::connect(const v8::Arguments& args)
+JS_METHOD_IMPL(ZMQSocketObject::connect)
 {
-  v8::HandleScope scope;
-  ZMQSocketObject* pObject = JSObjectWrap::Unwrap<ZMQSocketObject>(args.This());
+  js_method_enter_scope();
+  ZMQSocketObject* pObject = js_method_unwrap_self(ZMQSocketObject);
+
   std::string arg;
-  if (!__get_string_arg(args, arg))
+  if (!__get_string_arg(_args_, arg))
   {
-    return v8::ThrowException(v8::Exception::TypeError(v8::String::New("Invalid Argument")));
+    js_method_throw("Invalid Argument");
   }
    
   bool ret = pObject->_pSocket->connect(arg);
@@ -208,17 +211,18 @@ v8::Handle<v8::Value> ZMQSocketObject::connect(const v8::Arguments& args)
     _socketList.push_back(pObject);
     __wakeup_pipe();
   }
-  return v8::Boolean::New(ret);
+  js_method_set_return_boolean(ret);
 }
 
-v8::Handle<v8::Value> ZMQSocketObject::bind(const v8::Arguments& args)
+JS_METHOD_IMPL(ZMQSocketObject::bind)
 {
-  v8::HandleScope scope;
-  ZMQSocketObject* pObject = JSObjectWrap::Unwrap<ZMQSocketObject>(args.This());
+  js_method_enter_scope();
+  ZMQSocketObject* pObject = js_method_unwrap_self(ZMQSocketObject);
+
   std::string arg;
-  if (!__get_string_arg(args, arg))
+  if (!__get_string_arg(_args_, arg))
   {
-    return v8::ThrowException(v8::Exception::TypeError(v8::String::New("Invalid Argument")));
+    js_method_throw("Invalid Argument");
   }
   bool ret = pObject->_pSocket->bind(arg);
   if (ret)
@@ -227,119 +231,110 @@ v8::Handle<v8::Value> ZMQSocketObject::bind(const v8::Arguments& args)
     _socketList.push_back(pObject);
     __wakeup_pipe();
   }
-  return v8::Boolean::New(ret);
+  js_method_set_return_boolean(ret);
 }
 
-v8::Handle<v8::Value> ZMQSocketObject::subscribe(const v8::Arguments& args)
+JS_METHOD_IMPL(ZMQSocketObject::subscribe)
 {
-  v8::HandleScope scope;
-  ZMQSocketObject* pObject = JSObjectWrap::Unwrap<ZMQSocketObject>(args.This());
+  js_method_enter_scope();
+  ZMQSocketObject* pObject = js_method_unwrap_self(ZMQSocketObject);
+
   std::string arg;
-  if (!__get_string_arg(args, arg) && !__get_buffer_arg(args, arg))
+  if (!__get_string_arg(_args_, arg) && !__get_buffer_arg(_args_, arg))
   {
-    return v8::ThrowException(v8::Exception::TypeError(v8::String::New("Invalid Argument")));
+    js_method_throw("Invalid Argument");
   }
-  return v8::Boolean::New(pObject->_pSocket->subscribe(arg));
+  js_method_set_return_boolean(pObject->_pSocket->subscribe(arg));
 }
 
-v8::Handle<v8::Value> ZMQSocketObject::publish(const v8::Arguments& args)
+JS_METHOD_IMPL(ZMQSocketObject::publish)
 {
-  v8::HandleScope scope;
-  ZMQSocketObject* pObject = JSObjectWrap::Unwrap<ZMQSocketObject>(args.This());
+  js_method_enter_scope();
+  ZMQSocketObject* pObject = js_method_unwrap_self(ZMQSocketObject);
+
   std::string arg;
-  if (!__get_string_arg(args, arg) && !__get_buffer_arg(args, arg))
+  if (!__get_string_arg(_args_, arg) && !__get_buffer_arg(_args_, arg))
   {
-    return v8::ThrowException(v8::Exception::TypeError(v8::String::New("Invalid Argument")));
+    js_method_throw("Invalid Argument");
   }
-  return v8::Boolean::New(pObject->_pSocket->publish(arg));
+  js_method_set_return_boolean(pObject->_pSocket->publish(arg));
 }
 
-v8::Handle<v8::Value> ZMQSocketObject::send(const v8::Arguments& args)
+JS_METHOD_IMPL(ZMQSocketObject::send)
 {
-  v8::HandleScope scope;
-  ZMQSocketObject* pObject = JSObjectWrap::Unwrap<ZMQSocketObject>(args.This());
+  js_method_enter_scope();
+  ZMQSocketObject* pObject = js_method_unwrap_self(ZMQSocketObject);
+
   std::string arg;
-  if (!__get_string_arg(args, arg) && !__get_buffer_arg(args, arg))
+  if (!__get_string_arg(_args_, arg) && !__get_buffer_arg(_args_, arg))
   {
-    return v8::ThrowException(v8::Exception::TypeError(v8::String::New("Invalid Argument")));
+    js_method_throw("Invalid Argument");
   }
-  return v8::Boolean::New(pObject->_pSocket->sendRequest(arg));
+  js_method_set_return_boolean(pObject->_pSocket->sendRequest(arg));
 }
 
-v8::Handle<v8::Value> ZMQSocketObject::receive(const v8::Arguments& args)
+JS_METHOD_IMPL(ZMQSocketObject::receive)
 {
-  v8::HandleScope scope;
-  ZMQSocketObject* pObject = JSObjectWrap::Unwrap<ZMQSocketObject>(args.This());
+  js_method_enter_scope();
+  ZMQSocketObject* pObject = js_method_unwrap_self(ZMQSocketObject);
+
   std::string msg;
-  v8::Handle<v8::Value> result = v8::Undefined();
+  v8::Handle<v8::Value> result = js_method_undefined();
   if (pObject->_pSocket->receiveReply(msg, 0))
   {
     BufferObject* pBuffer = 0;
-    if (args.Length() == 1 && BufferObject::isBuffer(args[0]))
+    if (_args_.Length() == 1 && BufferObject::isBuffer(js_method_isolate(), _args_[0]))
     {
-      result = args[0];
-      pBuffer = JSObjectWrap::Unwrap<BufferObject>(args[0]->ToObject());
+      result = _args_[0];
+      pBuffer = JSObjectWrap::Unwrap<BufferObject>(_args_[0]->ToObject(js_method_context()).ToLocalChecked());
       if (msg.size() > pBuffer->buffer().size())
       {
-        return v8::ThrowException(v8::Exception::Error(v8::String::New("Size of read buffer is too small")));
+        js_method_throw("Size of read buffer is too small");
       }
       std::copy(msg.begin(), msg.end(), pBuffer->buffer().begin());
     }
     else
     {
-      return v8::ThrowException(v8::Exception::Error(v8::String::New("Read buffer not provided")));
+      js_method_throw("Read buffer not provided");
     }
   }
-  result->ToObject()->Set(v8::String::NewSymbol("payloadSize"), v8::Uint32::New(msg.size()));
+  result->ToObject(js_method_context()).ToLocalChecked()->Set(js_method_context(), js_method_string("payloadSize"), js_method_uint32(msg.size()));
   pObject->clearReadable();
-  return result;
+  js_method_set_return_handle(result);
 }
 
-v8::Handle<v8::Value> ZMQSocketObject::close(const v8::Arguments& args)
+JS_METHOD_IMPL(ZMQSocketObject::close)
 {
-  v8::HandleScope scope;
-  ZMQSocketObject* pObject = JSObjectWrap::Unwrap<ZMQSocketObject>(args.This());
+  js_method_enter_scope();
+  ZMQSocketObject* pObject = js_method_unwrap_self(ZMQSocketObject);
+
   pObject->_pSocket->close();
   _socketList.remove(pObject);
   __wakeup_pipe();
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-v8::Handle<v8::Value> ZMQSocketObject::getFd(const v8::Arguments& args)
+JS_METHOD_IMPL(ZMQSocketObject::getFd)
 {
-  v8::HandleScope scope;
-  ZMQSocketObject* pObject = JSObjectWrap::Unwrap<ZMQSocketObject>(args.This());
-  return v8::Int32::New(pObject->_pipe[0]);
+  js_method_enter_scope();
+  ZMQSocketObject* pObject = js_method_unwrap_self(ZMQSocketObject);
+
+  js_method_set_return_handle(js_method_int32(pObject->_pipe[0]));
 }
   
-void ZMQSocketObject::Init(v8::Handle<v8::Object> exports)
+JS_CLASS_INTERFACE(ZMQSocketObject,"ZMQSocket")
 {
-  v8::HandleScope scope;
-  exports->Set(v8::String::New("REQ"), v8::Integer::New(Socket::REQ), v8::ReadOnly);
-  exports->Set(v8::String::New("REP"), v8::Integer::New(Socket::REP), v8::ReadOnly);
-  exports->Set(v8::String::New("PUSH"), v8::Integer::New(Socket::PUSH), v8::ReadOnly);
-  exports->Set(v8::String::New("PULL"), v8::Integer::New(Socket::PULL), v8::ReadOnly);
-  exports->Set(v8::String::New("PUB"), v8::Integer::New(Socket::PUB), v8::ReadOnly);
-  exports->Set(v8::String::New("SUB"), v8::Integer::New(Socket::SUB), v8::ReadOnly);
+  JS_CLASS_METHOD_DEFINE(ZMQSocketObject, "connect", connect);
+  JS_CLASS_METHOD_DEFINE(ZMQSocketObject, "bind", bind);
+  JS_CLASS_METHOD_DEFINE(ZMQSocketObject, "publish", publish);
+  JS_CLASS_METHOD_DEFINE(ZMQSocketObject, "subscribe", subscribe);
+  JS_CLASS_METHOD_DEFINE(ZMQSocketObject, "send", send);
+  JS_CLASS_METHOD_DEFINE(ZMQSocketObject, "receive", receive);
+  JS_CLASS_METHOD_DEFINE(ZMQSocketObject, "close", close);
+  JS_CLASS_METHOD_DEFINE(ZMQSocketObject, "getFd", getFd);
 
-  v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(ZMQSocketObject::New);
-  tpl->SetClassName(v8::String::NewSymbol("ZMQSocket"));
-  tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("ObjectType"), v8::String::NewSymbol("ZMQSocket"));
-  tpl->InstanceTemplate()->SetInternalFieldCount(1);
-  
-  tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("connect"), v8::FunctionTemplate::New(connect)->GetFunction());
-  tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("bind"), v8::FunctionTemplate::New(bind)->GetFunction());
-  tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("connect"), v8::FunctionTemplate::New(connect)->GetFunction());
-  tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("publish"), v8::FunctionTemplate::New(publish)->GetFunction());
-  tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("subscribe"), v8::FunctionTemplate::New(subscribe)->GetFunction());
-  tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("send"), v8::FunctionTemplate::New(send)->GetFunction());
-  tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("receive"), v8::FunctionTemplate::New(receive)->GetFunction());
-  tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("_close"), v8::FunctionTemplate::New(close)->GetFunction());
-  tpl->PrototypeTemplate()->Set(v8::String::NewSymbol("getFd"), v8::FunctionTemplate::New(getFd)->GetFunction());
-  
-  ZMQSocketObject::_constructor = v8::Persistent<v8::Function>::New(tpl->GetFunction());
-  exports->Set(v8::String::NewSymbol("ZMQSocket"), ZMQSocketObject::_constructor);
-  
+  JS_CLASS_INTERFACE_END(ZMQSocketObject);
+
   _context = new zmq::context_t(1);
   _notifySem = new OSS::Semaphore();
   _notifyReceiver = new ZMQSocketObject(OSS::ZMQ::ZMQSocket::PULL);
@@ -349,15 +344,17 @@ void ZMQSocketObject::Init(v8::Handle<v8::Object> exports)
   ZMQSocketObject::_pPollThread = new boost::thread(boost::bind(pollForReadEvents));
 }
 
-static v8::Handle<v8::Value> cleanup_exports(const v8::Arguments& args)
+JS_METHOD_IMPL(cleanup_exports)
 {
-  v8::HandleScope scope;
+  js_method_enter_scope();
+
   if (_isTerminating)
   {
     //
     // Don't let this function be called twice or we will double free stuff
     //
-    return v8::Undefined();
+    js_method_set_return_undefined();
+    return;
   }
 
   _isTerminating = true;
@@ -379,18 +376,23 @@ static v8::Handle<v8::Value> cleanup_exports(const v8::Arguments& args)
   //
   // delete _context ;
 
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> init_exports(const v8::Arguments& args)
-{
-  v8::HandleScope scope; 
-  v8::Persistent<v8::Object> exports = v8::Persistent<v8::Object>::New(v8::Object::New());
+JS_EXPORTS_INIT()
+{  
+  js_export_class(ZMQSocketObject);
+
+  js_export_method("__cleanup_exports",cleanup_exports);
   
-  ZMQSocketObject::Init(exports);
-  exports->Set(v8::String::NewSymbol("__cleanup_exports"), v8::FunctionTemplate::New(cleanup_exports)->GetFunction());
-  
-  return exports;
+  js_export_int32("REQ",OSS::ZMQ::ZMQSocket::REQ);
+  js_export_int32("REP",OSS::ZMQ::ZMQSocket::REP);
+  js_export_int32("PUSH",OSS::ZMQ::ZMQSocket::PUSH);
+  js_export_int32("PULL",OSS::ZMQ::ZMQSocket::PULL);
+  js_export_int32("PUB",OSS::ZMQ::ZMQSocket::PUB);
+  js_export_int32("SUB",OSS::ZMQ::ZMQSocket::SUB);
+
+  js_export_finalize();
 }
 
 JS_REGISTER_MODULE(JSZMQSocket);

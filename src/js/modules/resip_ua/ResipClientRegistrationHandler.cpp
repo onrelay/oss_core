@@ -93,8 +93,8 @@ JS_CONSTRUCTOR_IMPL(ResipClientRegistrationHandler)
   ResipClientRegistrationHandler* object = new ResipClientRegistrationHandler();
   object->_handler = new client_registration_handler(object);
   object->_isolate = OSS::JS::JSIsolate::getIsolate();
-  object->Wrap(js_method_arg_self());
-  return js_method_arg_self();
+  object->Wrap(js_method_self());
+  return js_method_self();
 }
 
 ResipClientRegistrationHandler::ResipClientRegistrationHandler() :
@@ -141,47 +141,47 @@ ResipClientRegistrationHandler::~ResipClientRegistrationHandler()
 
 JS_METHOD_IMPL(ResipClientRegistrationHandler::handleOnSuccess)
 {
-  js_method_arg_declare_self(ResipClientRegistrationHandler, self);
-  js_method_arg_declare_persistent_function(handler, 0);
+  js_method_declare_self(ResipClientRegistrationHandler, self);
+  js_method_declare_persistent_function(handler, 0);
   self->_handleOnSuccess = new JSPersistentFunctionHandle;
   *(self->_handleOnSuccess) = handler;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipClientRegistrationHandler::handleOnRemoved)
 {
-  js_method_arg_declare_self(ResipClientRegistrationHandler, self);
-  js_method_arg_declare_persistent_function(handler, 0);
+  js_method_declare_self(ResipClientRegistrationHandler, self);
+  js_method_declare_persistent_function(handler, 0);
   self->_handleOnRemoved = new JSPersistentFunctionHandle;
   *(self->_handleOnRemoved) = handler;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipClientRegistrationHandler::handleOnRequestRetry)
 {
-  js_method_arg_declare_self(ResipClientRegistrationHandler, self);
-  js_method_arg_declare_persistent_function(handler, 0);
+  js_method_declare_self(ResipClientRegistrationHandler, self);
+  js_method_declare_persistent_function(handler, 0);
   self->_handleOnRequestRetry = new JSPersistentFunctionHandle;
   *(self->_handleOnRequestRetry) = handler;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipClientRegistrationHandler::handleOnFailure)
 {
-  js_method_arg_declare_self(ResipClientRegistrationHandler, self);
-  js_method_arg_declare_persistent_function(handler, 0);
+  js_method_declare_self(ResipClientRegistrationHandler, self);
+  js_method_declare_persistent_function(handler, 0);
   self->_handleOnFailure = new JSPersistentFunctionHandle;
   *(self->_handleOnFailure) = handler;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipClientRegistrationHandler::handleOnRefreshRequired)
 {
-  js_method_arg_declare_self(ResipClientRegistrationHandler, self);
-  js_method_arg_declare_persistent_function(handler, 0);
+  js_method_declare_self(ResipClientRegistrationHandler, self);
+  js_method_declare_persistent_function(handler, 0);
   self->_handleOnRefreshRequired = new JSPersistentFunctionHandle;
   *(self->_handleOnRefreshRequired) = handler;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 void ResipClientRegistrationHandler::onSuccessIsolated(void* user_data)
@@ -191,10 +191,10 @@ void ResipClientRegistrationHandler::onSuccessIsolated(void* user_data)
   if (_handleOnSuccess)
   {
     JSLocalValueHandle result = JSObject();
-    result->ToObject()->Set(JSLiteral("key"), JSString(data->key.c_str()));
+    result->ToObject()->Set(JSString("key"), JSString(data->key.c_str()));
     JSLocalArgumentVector args;
     args.push_back(result);
-    (*_handleOnSuccess)->Call(js_get_global(), args.size(), args.data());
+    (*_handleOnSuccess)->Call(js_get_v8_global(), args.size(), args.data());
   }
   delete data;
 }
@@ -206,10 +206,10 @@ void ResipClientRegistrationHandler::onRemovedIsolated(void* user_data)
   if (_handleOnRemoved)
   {
     JSLocalValueHandle result = JSObject();
-    result->ToObject()->Set(JSLiteral("key"), JSString(data->key.c_str()));
+    result->ToObject()->Set(JSString("key"), JSString(data->key.c_str()));
     JSLocalArgumentVector args;
     args.push_back(result);
-    (*_handleOnRemoved)->Call(js_get_global(), args.size(), args.data());
+    (*_handleOnRemoved)->Call(js_get_v8_global(), args.size(), args.data());
   }
   delete data;
 }
@@ -221,10 +221,10 @@ void ResipClientRegistrationHandler::onRequestRetryIsolated(void* user_data)
   if (_handleOnRequestRetry)
   {
     JSLocalValueHandle result = JSObject();
-    result->ToObject()->Set(JSLiteral("key"), JSString(data->key.c_str()));
+    result->ToObject()->Set(JSString("key"), JSString(data->key.c_str()));
     JSLocalArgumentVector args;
     args.push_back(result);
-    (*_handleOnRequestRetry)->Call(js_get_global(), args.size(), args.data());
+    (*_handleOnRequestRetry)->Call(js_get_v8_global(), args.size(), args.data());
   }
   delete data;
 }
@@ -236,10 +236,10 @@ void ResipClientRegistrationHandler::onFailureIsolated(void* user_data)
   if (_handleOnFailure)
   {
     JSLocalValueHandle result = JSObject();
-    result->ToObject()->Set(JSLiteral("key"), JSString(data->key.c_str()));
+    result->ToObject()->Set(JSString("key"), JSString(data->key.c_str()));
     JSLocalArgumentVector args;
     args.push_back(result);
-    (*_handleOnFailure)->Call(js_get_global(), args.size(), args.data());
+    (*_handleOnFailure)->Call(js_get_v8_global(), args.size(), args.data());
   }
   delete data;
 }
@@ -251,10 +251,10 @@ void ResipClientRegistrationHandler::onRefreshRequiredIsolated(void* user_data)
   if (_handleOnRefreshRequired)
   {
     JSLocalValueHandle result = JSObject();
-    result->ToObject()->Set(JSLiteral("key"), JSString(data->key.c_str()));
+    result->ToObject()->Set(JSString("key"), JSString(data->key.c_str()));
     JSLocalArgumentVector args;
     args.push_back(result);
-    (*_handleOnRefreshRequired)->Call(js_get_global(), args.size(), args.data());
+    (*_handleOnRefreshRequired)->Call(js_get_v8_global(), args.size(), args.data());
   }
   delete data;
 }

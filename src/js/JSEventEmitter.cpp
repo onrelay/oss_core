@@ -57,7 +57,10 @@ void JSEventEmitter::onEmitEvent(void* userData)
   _eventQueueMutex.unlock();
   
   QueueObject::Event::Ptr pEvent = QueueObject::Event::Ptr(new QueueObject::Event());
-  js_assign_persistent_arg_vector(pEvent->_eventData, v8::Local<v8::Value>::New(_pEventLoop->getIsolate()->parseJSON(json)));
+  js_assign_persistent_arg_vector(_pEventLoop->getIsolate()->getV8Isolate(),
+    pEvent->_eventData, v8::Local<v8::Value>::New(
+    _pEventLoop->getIsolate()->getV8Isolate()
+    ,_pEventLoop->getIsolate()->parseJSON(json)));
   _pEventLoop->queueManager().enqueue(fd, pEvent);
 }
 

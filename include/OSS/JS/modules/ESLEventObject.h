@@ -24,7 +24,7 @@
 #include "OSS/JS/JSPlugin.h"
 #include "OSS/Net/ESLEvent.h"
 
-#define js_method_arg_as_esl_event(Index) js_method_arg_unwrap_object(ESLEventObject, Index)
+#define js_method_arg_as_esl_event(Index) js_method_unwrap_object(ESLEventObject, Index)
 
 class ESLEventObject: public OSS::JS::JSObjectWrap
 {

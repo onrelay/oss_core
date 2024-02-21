@@ -50,34 +50,34 @@ JS_CONSTRUCTOR_IMPL(ResipSIPStack)
   object->_interruptor = new EventThreadInterruptor(*object->_pollGrp);
   object->_stack = new SipStack(0, DnsStub::EmptyNameserverList, object->_interruptor, false, 0, 0, object->_pollGrp);
   object->_thread = new EventStackThread(*object->_stack, *object->_interruptor, *object->_pollGrp);
-  object->Wrap(js_method_arg_self());
-  return js_method_arg_self();
+  object->Wrap(js_method_self());
+  return js_method_self();
 }
 
 JS_METHOD_IMPL(ResipSIPStack::run)
 {
-  js_method_arg_declare_self(ResipSIPStack, stack);
+  js_method_declare_self(ResipSIPStack, stack);
   stack->_stack->run();
   stack->_thread->run();
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipSIPStack::shutdown)
 {
-  js_method_arg_declare_self(ResipSIPStack, stack);
+  js_method_declare_self(ResipSIPStack, stack);
   stack->_stack->shutdownAndJoinThreads();
   stack->_thread->shutdown();
   stack->_thread->join();
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipSIPStack::addTransport)
 {
-  js_method_arg_declare_self(ResipSIPStack, self);
-  js_method_arg_declare_int32(type, 0);
-  js_method_arg_declare_uint32(port, 1);
+  js_method_declare_self(ResipSIPStack, self);
+  js_method_declare_int32(type, 0);
+  js_method_declare_uint32(port, 1);
   assert(self);
   TransportType transport_type = (TransportType)type;
   self->stack()->addTransport(transport_type, port);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }

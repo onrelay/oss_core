@@ -54,47 +54,49 @@ ESLEventObject::~ESLEventObject()
 JS_CONSTRUCTOR_IMPL(ESLEventObject)
 {
   ESLEventObject* obj = new ESLEventObject();
-  obj->Wrap(js_method_arg_self());
-  return js_method_arg_self();
+  obj->Wrap(js_method_self());
+  js_method_set_return_self();
 }
 
 JS_METHOD_IMPL(ESLEventObject::create)
 {
-  ESLEventObject* pObject = js_method_arg_unwrap_self(ESLEventObject);
-  js_method_arg_assert_size_eq(2);
+  ESLEventObject* pObject = js_method_unwrap_self(ESLEventObject);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_string(0);
   js_method_arg_assert_string(1);
   
   std::string type = js_method_arg_as_std_string(0);
   std::string subClass = js_method_arg_as_std_string(0);
   
-  return JSBoolean(pObject->_event->create(type, subClass));
+  js_method_set_return_boolean(pObject->_event->create(type, subClass));
 }
 
 JS_METHOD_IMPL(ESLEventObject::data)
 {
-  ESLEventObject* pObject = js_method_arg_unwrap_self(ESLEventObject);
+  ESLEventObject* pObject = js_method_unwrap_self(ESLEventObject);
   if (!pObject->_event)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(pObject->_event->data());
+  js_method_set_return_string(pObject->_event->data());
 }
 
 JS_METHOD_IMPL(ESLEventObject::getHeader)
 {
-  ESLEventObject* pObject = js_method_arg_unwrap_self(ESLEventObject);
+  ESLEventObject* pObject = js_method_unwrap_self(ESLEventObject);
   if (!pObject->_event)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;  
   }
   
-  js_method_arg_assert_size_gteq(1);
+  js_method_args_assert_size_gteq(1);
   js_method_arg_assert_string(0);
   
   std::string name = js_method_arg_as_std_string(0);
   uint32_t index = 0;
-  if (js_method_arg_length() > 1)
+  if (js_method_args_length() > 1)
   {
     js_method_arg_assert_uint32(1);
     index = js_method_arg_as_uint32(1);
@@ -102,172 +104,190 @@ JS_METHOD_IMPL(ESLEventObject::getHeader)
   std::string value;
   if (pObject->_event->getHeader(name, value, index))
   {
-    return JSString(value);
+    js_method_set_return_string(value);
+    return;
   }
-  return JSUndefined();
+    
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ESLEventObject::getBody)
 {
-  ESLEventObject* pObject = js_method_arg_unwrap_self(ESLEventObject);
+  ESLEventObject* pObject = js_method_unwrap_self(ESLEventObject);
   if (!pObject->_event)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
   
   std::string body;
   if (pObject->_event->getBody(body))
   {
-    return JSString(body);
+    js_method_set_return_string(body);
+    return;
   }
-  return JSUndefined();
+    js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ESLEventObject::getEventName)
 {
-  ESLEventObject* pObject = js_method_arg_unwrap_self(ESLEventObject);
+  ESLEventObject* pObject = js_method_unwrap_self(ESLEventObject);
   if (!pObject->_event)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
   std::string name;
   if (pObject->_event->getEventName(name))
   {
-    return JSString(name);
+    js_method_set_return_string(name);
+    return;
   }
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ESLEventObject::setBody)
 {
-  ESLEventObject* pObject = js_method_arg_unwrap_self(ESLEventObject);
+  ESLEventObject* pObject = js_method_unwrap_self(ESLEventObject);
   if (!pObject->_event)
   {
-    return JSBoolean(false);
+    js_method_set_return_false();
+    return;
   }
-  js_method_arg_assert_size_gteq(1);
+  js_method_args_assert_size_gteq(1);
   js_method_arg_assert_string(0);
   std::string value = js_method_arg_as_std_string(0);
-  return JSBoolean(pObject->_event->setBody(value));
+  js_method_set_return_boolean(pObject->_event->setBody(value));
 }
 
 JS_METHOD_IMPL(ESLEventObject::addHeader)
 {
-  ESLEventObject* pObject = js_method_arg_unwrap_self(ESLEventObject);
+  ESLEventObject* pObject = js_method_unwrap_self(ESLEventObject);
   if (!pObject->_event)
   {
-    return JSBoolean(false);
+    js_method_set_return_false();
+    return;
   }
-  js_method_arg_assert_size_gteq(2);
+  js_method_args_assert_size_gteq(2);
   js_method_arg_assert_string(0);
   js_method_arg_assert_string(1);
   
   std::string name = js_method_arg_as_std_string(0);
   std::string value = js_method_arg_as_std_string(1);
-  return JSBoolean(pObject->_event->addHeader(name, value));
+  js_method_set_return_boolean(pObject->_event->addHeader(name, value));
 }
 
 JS_METHOD_IMPL(ESLEventObject::pushHeader)
 {
-  ESLEventObject* pObject = js_method_arg_unwrap_self(ESLEventObject);
+  ESLEventObject* pObject = js_method_unwrap_self(ESLEventObject);
   if (!pObject->_event)
   {
-    return JSBoolean(false);
+    js_method_set_return_false();
+    return;
   }
-  js_method_arg_assert_size_gteq(2);
+  js_method_args_assert_size_gteq(2);
   js_method_arg_assert_string(0);
   js_method_arg_assert_string(1);
   
   std::string name = js_method_arg_as_std_string(0);
   std::string value = js_method_arg_as_std_string(1);
-  return JSBoolean(pObject->_event->pushHeader(name, value));
+  js_method_set_return_boolean(pObject->_event->pushHeader(name, value));
 }
 
 JS_METHOD_IMPL(ESLEventObject::unshiftHeader)
 {
-  ESLEventObject* pObject = js_method_arg_unwrap_self(ESLEventObject);
+  ESLEventObject* pObject = js_method_unwrap_self(ESLEventObject);
   if (!pObject->_event)
   {
-    return JSBoolean(false);
+    js_method_set_return_false();
+    return;
   }
-  js_method_arg_assert_size_gteq(2);
+  js_method_args_assert_size_gteq(2);
   js_method_arg_assert_string(0);
   js_method_arg_assert_string(1);
   
   std::string name = js_method_arg_as_std_string(0);
   std::string value = js_method_arg_as_std_string(1);
-  return JSBoolean(pObject->_event->unshiftHeader(name, value));
+  js_method_set_return_boolean(pObject->_event->unshiftHeader(name, value));
 }
 
 JS_METHOD_IMPL(ESLEventObject::removeHeader)
 {
-  ESLEventObject* pObject = js_method_arg_unwrap_self(ESLEventObject);
+  ESLEventObject* pObject = js_method_unwrap_self(ESLEventObject);
   if (!pObject->_event)
   {
-    return JSBoolean(false);
+    js_method_set_return_false();
+    return;
   }
-  js_method_arg_assert_size_gteq(1);
+  js_method_args_assert_size_gteq(1);
   js_method_arg_assert_string(0);
   std::string name = js_method_arg_as_std_string(0);
-  return JSBoolean(pObject->_event->removeHeader(name));
+  js_method_set_return_boolean(pObject->_event->removeHeader(name));
 }
 
 JS_METHOD_IMPL(ESLEventObject::first)
 {
-  ESLEventObject* pObject = js_method_arg_unwrap_self(ESLEventObject);
+  ESLEventObject* pObject = js_method_unwrap_self(ESLEventObject);
   if (!pObject->_event)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
   const char* iter = pObject->_event->first();
   if (iter)
   {
-    return JSString(iter);
+    js_method_set_return_string(iter);
+    return;
   }
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ESLEventObject::next)
 {
-  ESLEventObject* pObject = js_method_arg_unwrap_self(ESLEventObject);
+  ESLEventObject* pObject = js_method_unwrap_self(ESLEventObject);
   if (!pObject->_event)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
   const char* iter = pObject->_event->next();
   if (iter)
   {
-    return JSString(iter);
+    js_method_set_return_string(iter);
+    return;
   }
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ESLEventObject::setPriority)
 {
-  ESLEventObject* pObject = js_method_arg_unwrap_self(ESLEventObject);
+  ESLEventObject* pObject = js_method_unwrap_self(ESLEventObject);
   if (!pObject->_event)
   {
-    return JSBoolean(false);
+    js_method_set_return_false();
+    return;
   }
-  js_method_arg_assert_size_gteq(1);
+  js_method_args_assert_size_gteq(1);
   js_method_arg_assert_int32(0);
   int32_t priority = js_method_arg_as_int32(0);
   if (priority > ESLEvent::EVENT_PRIORITY_HIGH)
   {
-    return JSBoolean(false);
+    js_method_set_return_false();
+    return;
   }
   
-  return JSBoolean(pObject->_event->setPriority((ESLEvent::Priority)priority));
+  js_method_set_return_boolean(pObject->_event->setPriority((ESLEvent::Priority)priority));
 }
 
 JS_METHOD_IMPL(ESLEventObject::isValid)
 {
-  ESLEventObject* pObject = js_method_arg_unwrap_self(ESLEventObject);
+  ESLEventObject* pObject = js_method_unwrap_self(ESLEventObject);
   if (!pObject->_event)
   {
-    return JSBoolean(false);
+    js_method_set_return_false();
+    return;
   }
-  return JSBoolean(pObject->_event->isValid());
+  js_method_set_return_boolean(pObject->_event->isValid());
 }
 
 JS_EXPORTS_INIT()

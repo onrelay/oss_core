@@ -23,12 +23,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-static v8::Handle<v8::Value> __pipe(const v8::Arguments& args)
+JS_METHOD_IMPL(__pipe)
 {
   int flags = 0;
-  if (args.Length() >= 1 && args[0]->IsInt32())
+  if (_args_.Length() >= 1 && _args_[0]->IsInt32())
   {
-    flags = args[0]->ToInt32()->Value();
+    flags = _args_[0]->Int32Value(js_method_context()).ToChecked();
   }
   int ret = 0;
   int pipefd[2];
@@ -44,21 +44,19 @@ static v8::Handle<v8::Value> __pipe(const v8::Arguments& args)
 #endif  
   if (ret == 0)
   {
-    v8::Handle<v8::Array> result = v8::Array::New(2);
-    result->Set(0, v8::Int32::New(pipefd[0]));
-    result->Set(1, v8::Int32::New(pipefd[1]));
-    return result;
+    JSArrayHandle result = js_method_array(2);
+    result->Set(js_method_context(), 0, js_method_int32(pipefd[0]));
+    result->Set(js_method_context(), 1, js_method_int32(pipefd[1]));
+    js_method_set_return_handle(result);
   }
   
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> init_exports(const v8::Arguments& args)
+JS_EXPORTS_INIT()
 {
-  v8::HandleScope scope; 
-  v8::Persistent<v8::Object> exports = v8::Persistent<v8::Object>::New(v8::Object::New());
-  exports->Set(v8::String::New("pipe"), v8::FunctionTemplate::New(__pipe)->GetFunction()); 
-  return exports;
+  js_export_method("pipe", __pipe );
+  js_export_finalize();
 }
 
 JS_REGISTER_MODULE(Pipe);

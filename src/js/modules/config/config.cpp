@@ -92,34 +92,34 @@ uint32_t ConfigObject::findSetting(config_setting_t* pSetting)
 JS_CONSTRUCTOR_IMPL(ConfigObject) 
 {
   ConfigObject* pConfig = new ConfigObject();
-  pConfig->Wrap(js_method_arg_self());
-  return js_method_arg_self();
+  pConfig->Wrap(js_method_self());
+  js_method_set_return_self();
 }
 
 JS_METHOD_IMPL(ConfigObject::readFile)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   std::string path = js_method_arg_as_std_string(0);
-  return JSBoolean(!!config_read_file(&pConfig->getConfig(), path.c_str()));
+  js_method_set_return_boolean(!!config_read_file(&pConfig->getConfig(), path.c_str()));
 }
 
 JS_METHOD_IMPL(ConfigObject::writeFile)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   std::string path = js_method_arg_as_std_string(0);
-  return JSBoolean(!!config_write_file(&pConfig->getConfig(), path.c_str()));
+  js_method_set_return_boolean(!!config_write_file(&pConfig->getConfig(), path.c_str()));
 }
 
 JS_METHOD_IMPL(ConfigObject::toString)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_uint32(0);
   uint32_t bufLen = js_method_arg_as_uint32(0);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   
   FILE* fp = ::fmemopen(0, bufLen, "w+");
   config_write(&pConfig->getConfig(), fp);
@@ -136,170 +136,180 @@ JS_METHOD_IMPL(ConfigObject::toString)
   }
   fclose(fp);
   
-  JSStringHandle result = JSString(chars, size);
+  JSStringHandle result = js_method_string(chars);
   delete[] chars;
-  return result;
+  js_method_set_return_handle(result);
 }
 
 JS_METHOD_IMPL(ConfigObject::lookupString)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   
   std::string key = js_method_arg_as_std_string(0);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   const char* value;
   if (!config_lookup_string(&pConfig->getConfig(), key.c_str(), &value))
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(value);
+  js_method_set_return_string(value);
 }
 
 JS_METHOD_IMPL(ConfigObject::lookupFloat)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   
   std::string key = js_method_arg_as_std_string(0);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   double value = 0;
   if (!config_lookup_float(&pConfig->getConfig(), key.c_str(), &value))
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSInteger(value);
+  js_method_set_return_integer(value);
 }
 
 JS_METHOD_IMPL(ConfigObject::lookupInteger)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   
   std::string key = js_method_arg_as_std_string(0);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   int value = 0;
   if (!config_lookup_int(&pConfig->getConfig(), key.c_str(), &value))
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;  
   }
-  return JSInteger(value);
+  js_method_set_return_integer(value);
 }
 
 JS_METHOD_IMPL(ConfigObject::lookupBoolean)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   
   std::string key = js_method_arg_as_std_string(0);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   int value = 0;
   if (!config_lookup_bool(&pConfig->getConfig(), key.c_str(), &value))
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;  
   }
-  return JSBoolean(!!value);
+  js_method_set_return_boolean(!!value);
 }
 
 JS_METHOD_IMPL(ConfigObject::lookupSetting)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_string(0);
   
   std::string key = js_method_arg_as_std_string(0);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   config_setting_t* pSetting = config_lookup(&pConfig->getConfig(), key.c_str());
   if (!pSetting)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;  
   }
-  
+
   uint32_t existingId = pConfig->findSetting(pSetting);
   if (existingId)
   {
-    return JSUInt32(existingId);
+    js_method_set_return_handle(js_method_uint32(existingId));
+    return;
   }
   
   pConfig->_settings[++pConfig->_id] = pSetting;
-  return JSUInt32(pConfig->_id);
+  js_method_set_return_handle(js_method_uint32(pConfig->_id));
 }
 
 JS_METHOD_IMPL(ConfigObject::rootSetting)
 {
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   if (pConfig->_rootSettingId)
   {
-    JSUInt32(pConfig->_rootSettingId);
+    js_method_set_return_handle(js_method_uint32(pConfig->_rootSettingId));
+    return;
   }
   
   config_setting_t* pSetting = config_root_setting(&pConfig->getConfig());
   if (!pSetting)
   {
-    return JSUndefined();
-  }
-   
+    js_method_set_return_undefined();
+    return;  
+  }   
   pConfig->_rootSettingId = ++pConfig->_id;
   pConfig->_settings[pConfig->_rootSettingId] = pSetting;
-  return JSUInt32(pConfig->_rootSettingId);
+  js_method_set_return_handle(js_method_uint32(pConfig->_rootSettingId));
 }
 
 JS_METHOD_IMPL(ConfigObject::settingLength)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_uint32(0);
   
   uint32_t settingId = js_method_arg_as_uint32(0);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   
   config_setting_t* pSetting = pConfig->findSetting(settingId);
   if (!pSetting)
   {
-    return JSInt32(0);
+    js_method_set_return_handle(js_method_int32(0));
   }
   uint32_t count = config_setting_length(pSetting);
   
-  return JSInt32(count);
+  js_method_set_return_handle(js_method_int32(count));
 }
 
 JS_METHOD_IMPL(ConfigObject::settingType)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_uint32(0);
   
   uint32_t settingId = js_method_arg_as_uint32(0);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   
   config_setting_t* pSetting = pConfig->findSetting(settingId);
   if (!pSetting)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;  
   }
   int type = config_setting_type(pSetting);
   
-  return JSInt32(type);
+  js_method_set_return_handle(js_method_int32(type));
 }
 
 JS_METHOD_IMPL(ConfigObject::settingLookupString)
 {
-  js_method_arg_assert_size_eq(2);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_uint32(0);
   js_method_arg_assert_string(1);
   
   uint32_t settingId = js_method_arg_as_uint32(0);
   std::string key = js_method_arg_as_std_string(1);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   config_setting_t* pSetting = pConfig->findSetting(settingId);
   
   if (!pSetting)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;  
   }
   const char* value;
   if (!key.empty())
   {
     if (!config_setting_lookup_string(pSetting, key.c_str(), &value))
     {
-      return JSUndefined();
+    js_method_set_return_undefined();
+    return;  
     }
   }
   else if (config_setting_type(pSetting) == CONFIG_TYPE_STRING)
@@ -307,136 +317,145 @@ JS_METHOD_IMPL(ConfigObject::settingLookupString)
     value = config_setting_get_string(pSetting);
   }
       
-  return JSString(value);
+  js_method_set_return_string(value);
 }
 
 JS_METHOD_IMPL(ConfigObject::settingLookupInteger)
 {
-  js_method_arg_assert_size_eq(2);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_uint32(0);
   js_method_arg_assert_string(1);
   
   uint32_t settingId = js_method_arg_as_uint32(0);
   std::string key = js_method_arg_as_std_string(1);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   config_setting_t* pSetting = pConfig->findSetting(settingId);
   if (!pSetting)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;  
   }
   int value = 0;
   if (!key.empty())
   {
     if (!config_setting_lookup_int(pSetting, key.c_str(), &value))
     {
-      return JSUndefined();
+      js_method_set_return_undefined();
+      return;  
     }
   }
   else if (config_setting_type(pSetting) == CONFIG_TYPE_INT)
   {
     value = config_setting_get_int(pSetting);
   }
-  return JSInt32(value);
+  js_method_set_return_handle(js_method_int32(value));
 }
 
 JS_METHOD_IMPL(ConfigObject::settingLookupFloat)
 {
-  js_method_arg_assert_size_eq(2);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_uint32(0);
   js_method_arg_assert_string(1);
   
   uint32_t settingId = js_method_arg_as_uint32(0);
   std::string key = js_method_arg_as_std_string(1);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   config_setting_t* pSetting = pConfig->findSetting(settingId);
   if (!pSetting)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;  
   }
   double value = 0;
   if (!key.empty())
   {
     if (!config_setting_lookup_float(pSetting, key.c_str(), &value))
     {
-      return JSUndefined();
+      js_method_set_return_undefined();
+      return;  
     }
   }
   else if (config_setting_type(pSetting) == CONFIG_TYPE_FLOAT)
   {
     value = config_setting_get_float(pSetting);
   }
-  return JSInteger(value);
+  js_method_set_return_integer(value);
 }
 
 JS_METHOD_IMPL(ConfigObject::settingLookupBoolean)
 {
-  js_method_arg_assert_size_eq(2);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_uint32(0);
   js_method_arg_assert_string(1);
   
   uint32_t settingId = js_method_arg_as_uint32(0);
   std::string key = js_method_arg_as_std_string(1);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   config_setting_t* pSetting = pConfig->findSetting(settingId);
   if (!pSetting)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;  
   }
   int value = 0;
   if (!key.empty())
   {
     if (!config_setting_lookup_bool(pSetting, key.c_str(), &value))
     {
-      return JSUndefined();
+      js_method_set_return_undefined();
+      return;  
     }
   }
   else if (config_setting_type(pSetting) == CONFIG_TYPE_BOOL)
   {
     value = config_setting_get_bool(pSetting);
   }
-  return JSBoolean(!!value);
+  js_method_set_return_boolean(!!value);
 }
 
 JS_METHOD_IMPL(ConfigObject::settingLookupSetting)
 {
-  js_method_arg_assert_size_eq(2);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_uint32(0);
   js_method_arg_assert_string(1);
   
   uint32_t settingId = js_method_arg_as_uint32(0);
   std::string key = js_method_arg_as_std_string(1);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   config_setting_t* pSetting = pConfig->findSetting(settingId);
   config_setting_t* pChildSetting = config_setting_get_member(pSetting, key.c_str());
   if (!pSetting || !pChildSetting)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;   
   }
   
   uint32_t existingId = pConfig->findSetting(pChildSetting);
   if (existingId)
   {
-    return JSUInt32(existingId);
+    js_method_set_return_handle(js_method_uint32(existingId));
+    return;
   }
   
   pConfig->_settings[++pConfig->_id] = pChildSetting;
-  return JSUInt32(pConfig->_id);
+  js_method_set_return_handle(js_method_uint32(pConfig->_id));
 }
 
 JS_METHOD_IMPL(ConfigObject::settingLookupElement)
 {
-  js_method_arg_assert_size_eq(2);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_uint32(0);
   js_method_arg_assert_uint32(1);
   
   uint32_t settingId = js_method_arg_as_uint32(0);
   uint32_t index = js_method_arg_as_uint32(1);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   config_setting_t* pSetting = pConfig->findSetting(settingId);
   
   if (!pSetting)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;    
   }
   
   config_setting_t* pElement = config_setting_get_elem(pSetting, index);
@@ -444,17 +463,18 @@ JS_METHOD_IMPL(ConfigObject::settingLookupElement)
   uint32_t existingId = pConfig->findSetting(pElement);
   if (existingId)
   {
-    return JSUInt32(existingId);
+    js_method_set_return_handle(js_method_uint32(existingId));
+    return;
   }
   
   pConfig->_settings[++pConfig->_id] = pElement;
   
-  return JSUInt32(pConfig->_id);
+  js_method_set_return_handle(js_method_uint32(pConfig->_id));
 }
 
 JS_METHOD_IMPL(ConfigObject::settingAddSetting)
 {
-  js_method_arg_assert_size_eq(3);
+  js_method_args_assert_size_eq(3);
   js_method_arg_assert_uint32(0);
   js_method_arg_assert_string(1);
   js_method_arg_assert_int32(2);
@@ -463,88 +483,88 @@ JS_METHOD_IMPL(ConfigObject::settingAddSetting)
   std::string key = js_method_arg_as_std_string(1);
   int type = js_method_arg_as_int32(2);
   
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   config_setting_t* pSetting = pConfig->findSetting(settingId);
   config_setting_t* pChildSetting = config_setting_add(pSetting, key.empty() ? 0 : key.c_str(), type);  
   pConfig->_settings[++pConfig->_id] = pChildSetting;
-  return JSUInt32(pConfig->_id);
+  js_method_set_return_handle(js_method_uint32(pConfig->_id));
 }
 
 JS_METHOD_IMPL(ConfigObject::settingSetAsString)
 {
-  js_method_arg_assert_size_eq(2);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_uint32(0);
   js_method_arg_assert_string(1);
   
   uint32_t settingId = js_method_arg_as_uint32(0);
   std::string value = js_method_arg_as_std_string(1);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   config_setting_t* pSetting = pConfig->findSetting(settingId);
   
   if (!pSetting)
   {
-    js_throw("Config Setting Not Found");
+    js_method_throw("Config Setting Not Found");
   }
   
-  return JSBoolean(!!config_setting_set_string(pSetting, value.c_str()));
+  js_method_set_return_boolean(!!config_setting_set_string(pSetting, value.c_str()));
 }
 
 JS_METHOD_IMPL(ConfigObject::settingSetAsInteger)
 {
-  js_method_arg_assert_size_eq(2);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_uint32(0);
   js_method_arg_assert_int32(1);
   
   uint32_t settingId = js_method_arg_as_uint32(0);
   int value = js_method_arg_as_int32(1);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   config_setting_t* pSetting = pConfig->findSetting(settingId);
   
   if (!pSetting)
   {
-    js_throw("Config Setting Not Found");
+    js_method_throw("Config Setting Not Found");
   }
   
-  return JSBoolean(!!config_setting_set_int(pSetting, value));
+  js_method_set_return_boolean(!!config_setting_set_int(pSetting, value));
 }
 
 JS_METHOD_IMPL(ConfigObject::settingSetAsBoolean)
 {
-  js_method_arg_assert_size_eq(2);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_uint32(0);
   js_method_arg_assert_bool(1);
   
   uint32_t settingId = js_method_arg_as_uint32(0);
   bool value = js_method_arg_as_bool(1);
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   config_setting_t* pSetting = pConfig->findSetting(settingId);
   
   if (!pSetting)
   {
-    js_throw("Config Setting Not Found");
+    js_method_throw("Config Setting Not Found");
   }
   
-  return JSBoolean(!!config_setting_set_bool(pSetting, value));
+  js_method_set_return_boolean(!!config_setting_set_bool(pSetting, value));
 }
 
 JS_METHOD_IMPL(ConfigObject::settingSetAsFloat)
 {
-  js_method_arg_assert_size_eq(2);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_uint32(0);
   js_method_arg_assert_number(1);
   
   uint32_t settingId = js_method_arg_as_uint32(0);
   double value = js_method_arg_as_number(1);
   
-  ConfigObject* pConfig = js_method_arg_unwrap_self(ConfigObject);
+  ConfigObject* pConfig = js_method_unwrap_self(ConfigObject);
   config_setting_t* pSetting = pConfig->findSetting(settingId);
   
   if (!pSetting)
   {
-    js_throw("Config Setting Not Found");
+    js_method_throw("Config Setting Not Found");
   }
   
-  return JSBoolean(!!config_setting_set_float(pSetting, value));
+  js_method_set_return_boolean(!!config_setting_set_float(pSetting, value));
 }
 
 JS_EXPORTS_INIT()

@@ -37,7 +37,7 @@ public:
   JSPlugin();
   virtual ~JSPlugin();
   virtual std::string name() const = 0;
-  virtual bool initExportFunc(std::string& funcName) = 0;
+  virtual bool initExportFunc(v8::Isolate* isolate, std::string& funcName) = 0;
 
   static Poco::ThreadPool* _pThreadPool;
 };
@@ -59,14 +59,16 @@ class Class : public JSPlugin \
 public: \
   Class(); \
   virtual std::string name() const; \
-  virtual bool initExportFunc(std::string& funcName); \
+  virtual bool initExportFunc(v8::Isolate* isolate, std::string& funcName); \
 }; \
 Class::Class() {} \
 std::string Class::name() const { return #Class; } \
-bool Class::initExportFunc(std::string& funcName) \
+bool Class::initExportFunc(v8::Isolate* isolate, std::string& funcName) \
 { \
+  v8::Local<v8::Context> context = isolate->GetCurrentContext(); \
+  v8::Local<v8::Object> global = context->Global(); \
   funcName = "__" #Class "_init_exports"; \
-  js_get_global()->Set(v8::String::New(funcName.c_str()), v8::FunctionTemplate::New(init_exports)->GetFunction()); \
+  global->Set(context,JSString(isolate,funcName.c_str()), v8::FunctionTemplate::New(isolate,init_exports)->GetFunction(context).ToLocalChecked()); \
   return true; \
 } \
 extern "C" { \

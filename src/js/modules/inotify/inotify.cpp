@@ -27,12 +27,12 @@
 
 JS_METHOD_IMPL(__inotify_init)
 {
-  return JSInt32(inotify_init());
+  return js_method_int32(inotify_init());
 }
 
 JS_METHOD_IMPL(__inotify_add_watch)
 {
-  js_method_arg_assert_size_eq(3);
+  js_method_args_assert_size_eq(3);
   js_method_arg_assert_int32(0);
   js_method_arg_assert_string(1);
   js_method_arg_assert_uint32(2);
@@ -41,12 +41,12 @@ JS_METHOD_IMPL(__inotify_add_watch)
   std::string pathname = js_method_arg_as_std_string(1);
   uint32_t mask = js_method_arg_as_uint32(2);
   
-  return JSInt32(inotify_add_watch(fd, pathname.c_str(), mask));
+  return js_method_int32(inotify_add_watch(fd, pathname.c_str(), mask));
 }
 
 JS_METHOD_IMPL(__inotify_rm_watch)
 {
-  js_method_arg_assert_size_eq(2);
+  js_method_args_assert_size_eq(2);
   js_method_arg_assert_int32(0);
   js_method_arg_assert_int32(1);
 
@@ -54,12 +54,12 @@ JS_METHOD_IMPL(__inotify_rm_watch)
   int32_t fd = js_method_arg_as_int32(0);
   int32_t wd = js_method_arg_as_int32(0);
   
-  return JSInt32(inotify_rm_watch(fd, wd));
+  return js_method_int32(inotify_rm_watch(fd, wd));
 }
 
 JS_METHOD_IMPL(__inotify_get_events)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_int32(0);
   int32_t fd = js_method_arg_as_int32(0);
   char buf[BUF_LEN] __attribute__ ((aligned(8)));

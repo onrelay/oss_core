@@ -212,141 +212,148 @@ bool HttpParserObject::getHeaderAt(uint32_t index, std::string& name, std::strin
 JS_CONSTRUCTOR_IMPL(HttpParserObject) 
 {
   HttpParserObject* pFile = new HttpParserObject();
-  pFile->Wrap(js_method_arg_self());
-  return js_method_arg_self();
+  pFile->Wrap(js_method_self());
+  js_method_set_return_handle(js_method_self());
 }
 
 JS_METHOD_IMPL(HttpParserObject::getMethod)
 {
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
   if (pParser->getUrl().empty())
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(pParser->getMethod().c_str());
+  js_method_set_return_string(pParser->getMethod().c_str());
 }
 
 JS_METHOD_IMPL(HttpParserObject::getUrl)
 {
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
   if (pParser->getUrl().empty())
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(pParser->getUrl().c_str());
+  js_method_set_return_string(pParser->getUrl().c_str());
 }
 
 JS_METHOD_IMPL(HttpParserObject::getStatus)
 {
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
   if (pParser->getStatus().empty())
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(pParser->getStatus().c_str());
+  js_method_set_return_string(pParser->getStatus().c_str());
 }
 
 JS_METHOD_IMPL(HttpParserObject::getStatusCode)
 {
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
   if (!pParser->getStatusCode())
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSInt32(pParser->getStatusCode());
+  js_method_set_return_handle(js_method_int32(pParser->getStatusCode()));
 }
 
 JS_METHOD_IMPL(HttpParserObject::getMajorVersion)
 {
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
-  return JSInt32(pParser->getMajorVersion());
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
+  js_method_set_return_handle(js_method_int32(pParser->getMajorVersion()));
 }
 
 JS_METHOD_IMPL(HttpParserObject::getMinorVersion)
 {
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
-  return JSInt32(pParser->getMinorVersion());
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
+  js_method_set_return_handle(js_method_int32(pParser->getMinorVersion()));
 }
 
 JS_METHOD_IMPL(HttpParserObject::getHeader)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_is_string(0);
   std::string header = js_method_arg_as_std_string(0);
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
   std::string value;
   if (!pParser->getHeader(header, value))
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(value.c_str());
+  js_method_set_return_string(value.c_str());
 }
 
 JS_METHOD_IMPL(HttpParserObject::getHeaderCount)
 {
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
-  return JSUInt32(pParser->getHeaderCount());
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
+  js_method_set_return_handle(js_method_uint32(pParser->getHeaderCount()));
 }
 
 JS_METHOD_IMPL(HttpParserObject::getHeaderAt)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_uint32(0);
   uint32_t index = js_method_arg_as_uint32(0);
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
   std::string name;
   std::string value;
   if (!pParser->getHeaderAt(index, name, value))
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  JSLocalObjectHandle header = JSObject();
-  header->Set(JSLiteral("header"), JSString(name.c_str()));
-  header->Set(JSLiteral("value"), JSString(value.c_str()));
-  return header;
+  JSLocalObjectHandle header = js_method_object();
+  header->Set(js_method_context(),js_method_string("header"), js_method_string(name.c_str()));
+  header->Set(js_method_context(),js_method_string("value"), js_method_string(value.c_str()));
+  js_method_set_return_handle(header);
 }
 
 JS_METHOD_IMPL(HttpParserObject::getBody)
 {
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
   if (pParser->getBody().empty())
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(pParser->getBody().c_str());
+  js_method_set_return_string(pParser->getBody().c_str());
 }
 
 JS_METHOD_IMPL(HttpParserObject::isRequest)
 {
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
-  return JSBoolean(pParser->isRequest());
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
+  js_method_set_return_boolean(pParser->isRequest());
 }
 
 JS_METHOD_IMPL(HttpParserObject::isReponse)
 {
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
-  return JSBoolean(pParser->isResponse());
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
+  js_method_set_return_boolean(pParser->isResponse());
 }
 
 JS_METHOD_IMPL(HttpParserObject::isMessageComplete)
 {
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
-  return JSBoolean(pParser->isMessageComplete());
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
+  js_method_set_return_boolean(pParser->isMessageComplete());
 }
 
 JS_METHOD_IMPL(HttpParserObject::isHeadersComplete)
 {
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
-  return JSBoolean(pParser->isHeadersComplete());
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
+  js_method_set_return_boolean(pParser->isHeadersComplete());
 }
 
 JS_METHOD_IMPL(HttpParserObject::parse)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_buffer(0);
   BufferObject* pBuffer = js_method_arg_as_buffer(0);
-  HttpParserObject* pParser = js_method_arg_unwrap_self(HttpParserObject);
-  return JSUInt32(http_parser_execute(&pParser->_parser, &_settings, (const char*)pBuffer->buffer().data(), pBuffer->buffer().size()));
+  HttpParserObject* pParser = js_method_unwrap_self(HttpParserObject);
+  js_method_set_return_handle(js_method_uint32(http_parser_execute(&pParser->_parser, &_settings, (const char*)pBuffer->buffer().data(), pBuffer->buffer().size())));
 }
 
 JS_EXPORTS_INIT()

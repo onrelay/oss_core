@@ -46,32 +46,32 @@ QueueObject::QueueObject() :
 
 QueueObject::~QueueObject()
 {
-  _eventCallback.Dispose();
+  _eventCallback.Reset();
   getIsolate()->eventLoop()->queueManager().removeQueue(this);
   Async::__wakeup_pipe();
 }
 
 JS_CONSTRUCTOR_IMPL(QueueObject)
 {
-  js_method_arg_declare_persistent_function(handler, 0);
+  js_method_declare_copyable_persistent_function(handler, 0);
   QueueObject* pQueue = new QueueObject();
   pQueue->_eventCallback = handler;
-  pQueue->Wrap(js_method_arg_self());
-  return js_method_arg_self();
+  pQueue->Wrap(js_method_self());
+  js_method_set_return_self();
 }
 
 JS_METHOD_IMPL(QueueObject::enqueue)
 {
-  js_method_arg_declare_array(items, 0);
-  js_method_arg_declare_self(QueueObject, pQueue);
+  js_method_declare_array(items, 0);
+  js_method_declare_self(QueueObject, pQueue);
   Event::Ptr pEvent = Event::Ptr(new QueueObject::Event());
-  js_assign_persistent_arg_vector(pEvent->_eventData, _args_[0]);
+  js_assign_persistent_arg_vector(js_method_isolate(), pEvent->_eventData, _args_[0]);
   pQueue->_queue.enqueue(pEvent);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(QueueObject::getFd)
 {
-  js_method_arg_declare_self(QueueObject, self);
-  return JSInt32(self->_queue.getFd());
+  js_method_declare_self(QueueObject, self);
+  js_method_set_return_handle(js_method_int32(self->_queue.getFd()));
 }

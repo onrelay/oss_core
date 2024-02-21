@@ -42,717 +42,958 @@
 using namespace OSS::SIP;
 using B2BUA::SIPB2BTransaction;
 
-static /*size_t*/ v8::Handle<v8::Value> msgGetMethod(const v8::Arguments& args/*const char* headerName*/)
+JS_METHOD_IMPL(msgGetMethod)
 {
-  if (args.Length() != 1)
-    return v8::Undefined();
+  if (_args_.Length() != 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   try
   {
     std::string cseq = pMsg->hdrGet(OSS::SIP::HDR_CSEQ);
     OSS::SIP::SIPCSeq hCSeq(cseq.c_str());
-    return v8::String::New(hCSeq.getMethod().c_str());
+    js_method_set_return_string(hCSeq.getMethod().c_str());
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgGetMethod - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static /*size_t*/ v8::Handle<v8::Value> msgHdrPresent(const v8::Arguments& args/*const char* headerName*/)
+JS_METHOD_IMPL(msgHdrPresent)
 {
-  if (args.Length() != 2)
-    return v8::Undefined();
+  if (_args_.Length() != 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  std::string headerName = OSS::JS::string_from_js_string(args[1]);
+  std::string headerName = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (headerName.empty())
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   try
   {
-    return v8::Boolean::New(pMsg->hdrPresent(headerName.c_str()));
+    js_method_set_return_boolean(pMsg->hdrPresent(headerName.c_str()));
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgHdrPresent - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static  /*size_t*/ v8::Handle<v8::Value> msgHdrGetSize(const v8::Arguments& args/*const char* headerName*/)
+JS_METHOD_IMPL(msgHdrGetSize)
 {
-  if (args.Length() != 2)
-    return v8::Undefined();
+  if (_args_.Length() != 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  std::string headerName = OSS::JS::string_from_js_string(args[1]);
+  std::string headerName = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (headerName.empty())
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
   
   try
   {
-    return v8::Integer::New(pMsg->hdrGetSize(headerName.c_str()));
+    js_method_set_return_integer(pMsg->hdrGetSize(headerName.c_str()));
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgHdrGetSize - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static /*const std::string&*/ v8::Handle<v8::Value> msgHdrGet(const v8::Arguments& args/*const char* headerName, size_t index = 0*/)
+JS_METHOD_IMPL(msgHdrGet)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  std::string headerName = OSS::JS::string_from_js_string(args[1]);
+  std::string headerName = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (headerName.empty())
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
   try
   {
-    if (args.Length() > 2)
+    if (_args_.Length() > 2)
     {
-      size_t index = args[2]->NumberValue();
-      return v8::String::New(pMsg->hdrGet(headerName.c_str(), index).c_str());
+      size_t index = _args_[2]->NumberValue(js_method_context()).ToChecked();
+      js_method_set_return_string(pMsg->hdrGet(headerName.c_str(), index).c_str());
+      return;
     }
 
-    return v8::String::New(pMsg->hdrGet(headerName.c_str()).c_str());
+    js_method_set_return_string(pMsg->hdrGet(headerName.c_str()).c_str());
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgHdrGet - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static /*bool*/ v8::Handle<v8::Value> msgHdrSet(const v8::Arguments& args/*const char* headerName, const std::string& headerValue, size_t index*/)
+JS_METHOD_IMPL(msgHdrSet)
 {
-  if (args.Length() < 3)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 3)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string headerName = OSS::JS::string_from_js_string(args[1]);
+  std::string headerName = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (headerName.empty())
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string headerValue = OSS::JS::string_from_js_string(args[2]);
+  std::string headerValue = OSS::JS::string_from_js_string( js_method_isolate(), _args_[2]);
   if (headerValue.empty())
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
   size_t index = 0;
-  if (args.Length() > 3)
-    index = args[3]->NumberValue();
+  if (_args_.Length() > 3)
+    index = _args_[3]->NumberValue(js_method_context()).ToChecked();
   
   try
   {
-    return v8::Boolean::New(pMsg->hdrSet(headerName.c_str(), headerValue, index));
+    js_method_set_return_boolean(pMsg->hdrSet(headerName.c_str(), headerValue, index));
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgHdrSet - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static /*bool*/ v8::Handle<v8::Value> msgHdrRemove(const v8::Arguments& args/*const char* headerName*/)
+JS_METHOD_IMPL(msgHdrRemove)
 {
-  if (args.Length() < 2)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string headerName = OSS::JS::string_from_js_string(args[1]);
+  std::string headerName = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (headerName.empty())
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
   
   try
   {
-    return v8::Boolean::New(pMsg->hdrRemove(headerName.c_str()));
+    js_method_set_return_boolean(pMsg->hdrRemove(headerName.c_str()));
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgHdrRemove - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Boolean::New(false);
+    js_method_set_return_false();
   }
 }
 
-static /*bool*/ v8::Handle<v8::Value> msgHdrListAppend(const v8::Arguments& args/*const char* name, const std::string& value*/)
+JS_METHOD_IMPL(msgHdrListAppend)
 {
-  if (args.Length() < 3)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 3)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string headerName = OSS::JS::string_from_js_string(args[1]);
+  std::string headerName = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (headerName.empty())
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string headerValue = OSS::JS::string_from_js_string(args[2]);
+  std::string headerValue = OSS::JS::string_from_js_string( js_method_isolate(), _args_[2]);
   if (headerValue.empty())
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
   try
   {
-    return v8::Boolean::New(pMsg->hdrListAppend(headerName.c_str(), headerValue));
+    js_method_set_return_boolean(pMsg->hdrListAppend(headerName.c_str(), headerValue));
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgHdrListAppend - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Boolean::New(false);
+    js_method_set_return_false();
   }
 }
 
-static /*bool*/ v8::Handle<v8::Value> msgHdrListPrepend(const v8::Arguments& args/*const char* name, const std::string& value*/)
+JS_METHOD_IMPL(msgHdrListPrepend)
 {
-  if (args.Length() < 3)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 3)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string headerName = OSS::JS::string_from_js_string(args[1]);
+  std::string headerName = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (headerName.empty())
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string headerValue = OSS::JS::string_from_js_string(args[2]);
+  std::string headerValue = OSS::JS::string_from_js_string( js_method_isolate(), _args_[2]);
   if (headerValue.empty())
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
   try
   {
-    return v8::Boolean::New(pMsg->hdrListPrepend(headerName.c_str(), headerValue));
+    js_method_set_return_boolean(pMsg->hdrListPrepend(headerName.c_str(), headerValue));
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgHdrListPrepend - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Boolean::New(false);
+    js_method_set_return_false();
   }
 }
 
-static /*std::string*/ v8::Handle<v8::Value> msgHdrListPopFront(const v8::Arguments& args/*const char* name*/)
+JS_METHOD_IMPL(msgHdrListPopFront)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  std::string headerName = OSS::JS::string_from_js_string(args[1]);
+  std::string headerName = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (headerName.empty())
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   try
   {
-    return v8::String::New(pMsg->hdrListPopFront(headerName.c_str()).c_str());
+    js_method_set_return_string(pMsg->hdrListPopFront(headerName.c_str()).c_str());
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgHdrListPopFront - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static /*bool*/ v8::Handle<v8::Value> msgHdrListRemove(const v8::Arguments& args/*const char* name*/)
+JS_METHOD_IMPL(msgHdrListRemove)
 {
-  if (args.Length() < 2)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string headerName = OSS::JS::string_from_js_string(args[1]);
+  std::string headerName = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (headerName.empty())
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
   try
   {
-    return v8::Boolean::New(pMsg->hdrListRemove(headerName.c_str()));
+    js_method_set_return_boolean(pMsg->hdrListRemove(headerName.c_str()));
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgHdrListRemove - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Boolean::New(false);
+    js_method_set_return_false();
   }
 }
 
-static  /*boost::tribool*/ v8::Handle<v8::Value> msgIsRequest(const v8::Arguments& args/*const char* method = 0*/)
+JS_METHOD_IMPL(msgIsRequest)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string method;
-  if (args.Length() >= 2)
-    method = OSS::JS::string_from_js_string(args[1]);
+  if (_args_.Length() >= 2)
+    method = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
 
   try
   {
     if (method.empty())
-      return v8::Boolean::New(pMsg->isRequest());
+    {
+      js_method_set_return_boolean(pMsg->isRequest());
+      return;
+    }
     else
-      return v8::Boolean::New(pMsg->isRequest(method.c_str()));
+    {
+      js_method_set_return_boolean(pMsg->isRequest(method.c_str()));
+      return;
+    }
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgIsRequest - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
 
-static /*boost::tribool*/ v8::Handle<v8::Value> msgIsResponse(const v8::Arguments& args)
+JS_METHOD_IMPL(msgIsResponse)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   try
   {
-    return v8::Boolean::New(pMsg->isResponse());
+    js_method_set_return_boolean(pMsg->isResponse());
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgIsResponse - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static /*boost::tribool*/ v8::Handle<v8::Value> msgIs1xx(const v8::Arguments& args)
+JS_METHOD_IMPL(msgIs1xx)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   try
   {
-    return v8::Boolean::New(pMsg->is1xx());
+    js_method_set_return_boolean(pMsg->is1xx());
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgIs1xx - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static /*boost::tribool*/ v8::Handle<v8::Value> msgIs2xx(const v8::Arguments& args)
+JS_METHOD_IMPL(msgIs2xx)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   try
   {
-    return v8::Boolean::New(pMsg->is2xx());
+    js_method_set_return_boolean(pMsg->is2xx());
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgIs2xx - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static /*boost::tribool*/ v8::Handle<v8::Value> msgIs3xx(const v8::Arguments& args)
+JS_METHOD_IMPL(msgIs3xx)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   try
   {
-    return v8::Boolean::New(pMsg->is3xx());
+    js_method_set_return_boolean(pMsg->is3xx());
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgIs3xx - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static /*boost::tribool*/ v8::Handle<v8::Value> msgIs4xx(const v8::Arguments& args)
+JS_METHOD_IMPL(msgIs4xx)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   try
   {
-    return v8::Boolean::New(pMsg->is4xx());
+    js_method_set_return_boolean(pMsg->is4xx());
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgIs4xx - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static /*boost::tribool*/ v8::Handle<v8::Value> msgIs5xx(const v8::Arguments& args)
+JS_METHOD_IMPL(msgIs5xx)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   try
   {
-    return v8::Boolean::New(pMsg->is5xx());
+    js_method_set_return_boolean(pMsg->is5xx());
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgIs5xx - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static /*boost::tribool*/ v8::Handle<v8::Value> msgIs6xx(const v8::Arguments& args)
+JS_METHOD_IMPL(msgIs6xx)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   try
   {
-    return v8::Boolean::New(pMsg->is6xx());
+    js_method_set_return_boolean(pMsg->is6xx());
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgIs6xx - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static /*boost::tribool*/ v8::Handle<v8::Value> msgIsResponseFamily(const v8::Arguments& args/*int responseCode*/)
+JS_METHOD_IMPL(msgIsResponseFamily)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  int responseCode = args[1]->NumberValue();
+  int responseCode = _args_[1]->NumberValue(js_method_context()).ToChecked();
 
   try
   {
-    return v8::Boolean::New(pMsg->isResponseFamily(responseCode));
+    js_method_set_return_boolean(pMsg->isResponseFamily(responseCode));
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgIsResponseFamily - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
   
 }
 
-static /*boost::tribool*/ v8::Handle<v8::Value> msgIsErrorResponse(const v8::Arguments& args)
+JS_METHOD_IMPL(msgIsErrorResponse)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   try
   {
-    return v8::Boolean::New(pMsg->isErrorResponse());
+    js_method_set_return_boolean(pMsg->isErrorResponse());
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgIsErrorResponse - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static /*boost::tribool*/ v8::Handle<v8::Value> msgIsMidDialog(const v8::Arguments& args)
+JS_METHOD_IMPL(msgIsMidDialog)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   try
   {
-    return v8::Boolean::New(pMsg->isMidDialog());
+    js_method_set_return_boolean(pMsg->isMidDialog());
   }
   catch(const OSS::Exception& e)
   {
     std::ostringstream msg;
     msg << "JavaScript->C++ Exception: msgHdrGet - " << e.message();
     OSS::log_error(msg.str());
-    return v8::Undefined();
+    js_method_set_return_undefined();
   }
 }
 
-static /*std::string&*/ v8::Handle<v8::Value> msgGetBody(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetBody)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  return v8::String::New(pMsg->getBody().c_str());
+  js_method_set_return_string(pMsg->getBody().c_str());
 }
 
-static /*bool*/ v8::Handle<v8::Value> msgSetBody(const v8::Arguments& args/*const std::string& body*/)
+JS_METHOD_IMPL(msgSetBody)
 {
-  if (args.Length() < 2)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string body = OSS::JS::string_from_js_string(args[1]);
+  std::string body = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   pMsg->setBody(body);
 
-  return v8::Boolean::New(true);
+  js_method_set_return_true();
 }
 
-static /*std::string&*/ v8::Handle<v8::Value> msgGetStartLine(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetStartLine)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  return v8::String::New(pMsg->getStartLine().c_str());
+  js_method_set_return_string(pMsg->getStartLine().c_str());
 }
 
-static /*std::string&*/ v8::Handle<v8::Value> msgSetStartLine(const v8::Arguments& args/*const std::string& sline*/)
+JS_METHOD_IMPL(msgSetStartLine)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  std::string sline = OSS::JS::string_from_js_string(args[1]);
+  std::string sline = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   pMsg->setStartLine(sline);
 
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> msgGetData(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetData)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
-  return v8::String::New(pMsg->data().c_str());
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  js_method_set_return_string(pMsg->data().c_str());
 }
 
-static v8::Handle<v8::Value> msgGetSize(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetSize)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Integer::New(0);
-  return v8::Integer::New(pMsg->data().size());
+  {
+    js_method_set_return_integer(0);
+    return;
+  }
+  js_method_set_return_integer(pMsg->data().size());
 }
 
-static v8::Handle<v8::Value> msgCommitData(const v8::Arguments& args)
+JS_METHOD_IMPL(msgCommitData)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
   pMsg->commitData();
-  return v8::String::New(pMsg->data().c_str());
+  js_method_set_return_string(pMsg->data().c_str());
 }
 
 //
 // Request-Line Processing
 //
 
-static /*bool*/ v8::Handle<v8::Value> requestLineGetMethod(const v8::Arguments& args/*const std::string& rline, std::string& method*/)
+JS_METHOD_IMPL(requestLineGetMethod)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string result;
   if (OSS::SIP::SIPRequestLine::getMethod(input, result))
-    return v8::String::New(result.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(result.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
 
-static /*bool*/ v8::Handle<v8::Value> requestLineGetURI(const v8::Arguments& args/*const std::string& rline, std::string& uri*/)
+JS_METHOD_IMPL(requestLineGetURI)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string result;
   if (OSS::SIP::SIPRequestLine::getURI(input, result))
-    return v8::String::New(result.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(result.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static /*bool*/ v8::Handle<v8::Value> requestLineGetVersion(const v8::Arguments& args/*const std::string& rline, std::string& version*/)
+JS_METHOD_IMPL(requestLineGetVersion)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string result;
   if (OSS::SIP::SIPRequestLine::getVersion(input, result))
-    return v8::String::New(result.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(result.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static /*bool*/ v8::Handle<v8::Value> requestLineSetMethod(const v8::Arguments& args/*std::string& rline, const char* method*/)
+JS_METHOD_IMPL(requestLineSetMethod)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string newval = OSS::JS::string_from_js_string(args[1]);
-  return v8::Boolean::New(OSS::SIP::SIPRequestLine::setMethod(input, newval.c_str()));
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
+  js_method_set_return_boolean(OSS::SIP::SIPRequestLine::setMethod(input, newval.c_str()));
 }
 
-static /*bool*/ v8::Handle<v8::Value> requestLineSetURI(const v8::Arguments& args/*std::string& rline, const char* uri*/)
+JS_METHOD_IMPL(requestLineSetURI)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string newval = OSS::JS::string_from_js_string(args[1]);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (!OSS::SIP::SIPRequestLine::setURI(input, newval.c_str()))
-    return v8::Undefined();
-  return v8::String::New(input.c_str());
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  js_method_set_return_string(input.c_str());
 }
 
 
-static /*bool*/ v8::Handle<v8::Value> requestLineSetVersion(const v8::Arguments& args/*std::string& rline, const char* version*/)
+JS_METHOD_IMPL(requestLineSetVersion)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string newval = OSS::JS::string_from_js_string(args[1]);
-  return v8::Boolean::New(OSS::SIP::SIPRequestLine::setVersion(input, newval.c_str()));
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
+  js_method_set_return_boolean(OSS::SIP::SIPRequestLine::setVersion(input, newval.c_str()));
 }
 
 
@@ -760,466 +1001,676 @@ static /*bool*/ v8::Handle<v8::Value> requestLineSetVersion(const v8::Arguments&
 // Status-Line Processing
 //
 
-static v8::Handle<v8::Value>/*bool*/ statusLineGetVersion(const v8::Arguments& args/*const std::string& sline, std::string& version*/)
+JS_METHOD_IMPL(statusLineGetVersion)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string result;
   if (OSS::SIP::SIPStatusLine::getVersion(input, result))
-    return v8::String::New(result.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(result.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value>/*bool*/ statusLineSetVersion(const v8::Arguments& args/*std::string& sline, const char* version*/)
+JS_METHOD_IMPL(statusLineSetVersion)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string newval = OSS::JS::string_from_js_string(args[1]);
-  return v8::Boolean::New(OSS::SIP::SIPStatusLine::setVersion(input, newval.c_str()));
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
+  js_method_set_return_boolean(OSS::SIP::SIPStatusLine::setVersion(input, newval.c_str()));
 }
 
 
-static v8::Handle<v8::Value>/*bool*/ statusLineGetStatusCode(const v8::Arguments& args/*const std::string& sline,std::string& statusCode*/)
+JS_METHOD_IMPL(statusLineGetStatusCode)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string result;
   if (OSS::SIP::SIPStatusLine::getStatusCode(input, result))
-    return v8::String::New(result.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(result.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
 
-static v8::Handle<v8::Value>/*bool*/ statusLineSetStatusCode(const v8::Arguments& args/*std::string& sline, const char* statusCode*/)
+JS_METHOD_IMPL(statusLineSetStatusCode)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string newval = OSS::JS::string_from_js_string(args[1]);
-  return v8::Boolean::New(OSS::SIP::SIPStatusLine::setStatusCode(input, newval.c_str()));
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
+  js_method_set_return_boolean(OSS::SIP::SIPStatusLine::setStatusCode(input, newval.c_str()));
 }
 
 
-static v8::Handle<v8::Value>/*bool*/ statusLineGetReasonPhrase(const v8::Arguments& args/*const std::string& sline, std::string& reasonPhrase*/)
+JS_METHOD_IMPL(statusLineGetReasonPhrase)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string result;
-  if (OSS::SIP::SIPStatusLine::getReasonPhrase(input, result))
-    return v8::String::New(result.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(result.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
 
-static v8::Handle<v8::Value>/*bool*/ statusLineSetReasonPhrase(const v8::Arguments& args/*std::string& sline, const char* reasonPhrase*/)
+JS_METHOD_IMPL(statusLineSetReasonPhrase)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string newval = OSS::JS::string_from_js_string(args[1]);
-  return v8::Boolean::New(OSS::SIP::SIPStatusLine::setReasonPhrase(input, newval.c_str()));
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
+  js_method_set_return_boolean(OSS::SIP::SIPStatusLine::setReasonPhrase(input, newval.c_str()));
 }
 
 //
 // URI Processing
 //
 
-static v8::Handle<v8::Value>/*bool*/ uriSetScheme(const v8::Arguments& args/*std::string& uri, const char* scheme*/)
+JS_METHOD_IMPL(uriSetScheme)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string newval = OSS::JS::string_from_js_string(args[1]);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (OSS::SIP::SIPURI::setScheme(input, newval.c_str()))
-    return v8::String::New(input.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(input.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriGetScheme(const v8::Arguments& args/*const std::string& uri, std::string& value*/)
+JS_METHOD_IMPL(uriGetScheme)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string val;
   if (OSS::SIP::SIPURI::getScheme(input, val))
-    return v8::String::New(val.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(val.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriGetUser(const v8::Arguments& args/*const std::string& uri, std::string& value*/)
+JS_METHOD_IMPL(uriGetUser)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string val;
   if (OSS::SIP::SIPURI::getUser(input, val))
-    return v8::String::New(val.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(val.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriSetUserInfo(const v8::Arguments& args/*std::string& uri, const char* userInfo*/)
+JS_METHOD_IMPL(uriSetUserInfo)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string newval = OSS::JS::string_from_js_string(args[1]);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (OSS::SIP::SIPURI::setUserInfo(input, newval.c_str()))
-    return v8::String::New(input.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(input.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriGetPassword(const v8::Arguments& args/*const std::string& uri, std::string& value*/)
+JS_METHOD_IMPL(uriGetPassword)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string val;
   if (OSS::SIP::SIPURI::getPassword(input, val))
-    return v8::String::New(val.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(val.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriGetHostPort(const v8::Arguments& args/*const std::string& uri, std::string& value*/)
+JS_METHOD_IMPL(uriGetHostPort)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string val;
   if (OSS::SIP::SIPURI::getHostPort(input, val))
-    return v8::String::New(val.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(val.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriSetHostPort(const v8::Arguments& args/*std::string& uri, const char* hostPort*/)
+JS_METHOD_IMPL(uriSetHostPort)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string newval = OSS::JS::string_from_js_string(args[1]);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (OSS::SIP::SIPURI::setHostPort(input, newval.c_str()))
-    return v8::String::New(input.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(input.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriGetParams(const v8::Arguments& args/*const std::string& uri, std::string& params*/)
+JS_METHOD_IMPL(uriGetParams)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string val;
   if (OSS::SIP::SIPURI::getParams(input, val))
-    return v8::String::New(val.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(val.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriSetParams(const v8::Arguments& args/*std::string& uri, const std::string& params*/)
+JS_METHOD_IMPL(uriSetParams)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string newval = OSS::JS::string_from_js_string(args[1]);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (OSS::SIP::SIPURI::setParams(input, newval.c_str()))
-    return v8::String::New(input.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(input.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriHasParam(const v8::Arguments& args/*const std::string& uri, const char* paraName*/)
+JS_METHOD_IMPL(uriHasParam)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string val = OSS::JS::string_from_js_string(args[1]);
-  return v8::Boolean::New(OSS::SIP::SIPURI::hasParam(input, val.c_str()));
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string val = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
+  js_method_set_return_boolean(OSS::SIP::SIPURI::hasParam(input, val.c_str()));
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriGetParam(const v8::Arguments& args/*const std::string& uri, const char* paramName, std::string& paramValue*/)
+JS_METHOD_IMPL(uriGetParam)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string name = OSS::JS::string_from_js_string(args[1]);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string name = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   std::string value;
   if (OSS::SIP::SIPURI::getParam(input, name.c_str(), value))
-    return v8::String::New(value.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(value.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriGetParamEx(const v8::Arguments& args/*const std::string& params, const char* paramName, std::string& paramValue*/)
+JS_METHOD_IMPL(uriGetParamEx)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string name = OSS::JS::string_from_js_string(args[1]);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string name = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   std::string value;
   if (OSS::SIP::SIPURI::getParamEx(input, name.c_str(), value))
-    return v8::String::New(value.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(value.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriSetParam(const v8::Arguments& args/*std::string& uri, const char* paramName, const char* paramValue*/)
+JS_METHOD_IMPL(uriSetParam)
 {
-  if (args.Length() < 3)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string name = OSS::JS::string_from_js_string(args[1]);
-  std::string newval = OSS::JS::string_from_js_string(args[2]);
-  return v8::Boolean::New(OSS::SIP::SIPURI::setParam(input, name.c_str(), newval.c_str()));
+  if (_args_.Length() < 3)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string name = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[2]);
+  js_method_set_return_boolean(OSS::SIP::SIPURI::setParam(input, name.c_str(), newval.c_str()));
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriSetParamEx(const v8::Arguments& args/*std::string& params, const char* paramName, const char* paramValue*/)
+JS_METHOD_IMPL(uriSetParamEx)
 {
-  if (args.Length() < 3)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string name = OSS::JS::string_from_js_string(args[1]);
-  std::string newval = OSS::JS::string_from_js_string(args[2]);
-  return v8::Boolean::New(OSS::SIP::SIPURI::setParam(input, name.c_str(), newval.c_str()));
+  if (_args_.Length() < 3)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string name = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[2]);
+  js_method_set_return_boolean(OSS::SIP::SIPURI::setParam(input, name.c_str(), newval.c_str()));
 }
 
-static v8::Handle<v8::Value>/*void*/ uriEscapeUser(const v8::Arguments& args/*std::string& result, const char* user*/)
+JS_METHOD_IMPL(uriEscapeUser)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string result;
   OSS::SIP::SIPURI::escapeUser(result, input.c_str());
-    return v8::String::New(result.c_str());
+  js_method_set_return_string(result.c_str());
 }
 
-static v8::Handle<v8::Value>/*void*/ uriEscapeParam(const v8::Arguments& args/*std::string& result, const char* param*/)
+JS_METHOD_IMPL(uriEscapeParam)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string result;
   OSS::SIP::SIPURI::escapeParam(result, input.c_str());
-  return v8::String::New(result.c_str());
+  js_method_set_return_string(result.c_str());
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriGetHeaders(const v8::Arguments& args/*const std::string& uri, std::string& headers*/)
+JS_METHOD_IMPL(uriGetHeaders)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string val;
   if (OSS::SIP::SIPURI::getHeaders(input, val))
-    return v8::String::New(val.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(val.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriSetHeaders(const v8::Arguments& args/*std::string& uri, const std::string& headers*/)
+JS_METHOD_IMPL(uriSetHeaders)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string newval = OSS::JS::string_from_js_string(args[1]);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (OSS::SIP::SIPURI::setHeaders(input, newval.c_str()))
-    return v8::String::New(input.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(input.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value>/*bool*/ uriVerify(const v8::Arguments& args/*const char* uri*/)
+JS_METHOD_IMPL(uriVerify)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  return v8::Boolean::New(OSS::SIP::SIPURI::verify(input.c_str()));
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  js_method_set_return_boolean(OSS::SIP::SIPURI::verify(input.c_str()));
 }
 
 //
 // From Processing
 //
 
-static v8::Handle<v8::Value> /*bool*/ fromGetDisplayName(const v8::Arguments& args/*const std::string& from, std::string& displayName*/)
+JS_METHOD_IMPL(fromGetDisplayName)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string val;
   if (OSS::SIP::SIPFrom::getDisplayName(input, val))
-    return v8::String::New(val.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(val.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> /*bool*/ fromSetDisplayName(const v8::Arguments& args/*std::string& from, const char* uri*/)
+JS_METHOD_IMPL(fromSetDisplayName)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string newval = OSS::JS::string_from_js_string(args[1]);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (OSS::SIP::SIPFrom::setDisplayName(input, newval.c_str()))
-    return v8::String::New(input.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(input.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> /*bool*/ fromGetURI(const v8::Arguments& args/*const std::string& from, std::string& uri*/)
+JS_METHOD_IMPL(fromGetURI)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string val;
   if (OSS::SIP::SIPFrom::getURI(input, val))
-    return v8::String::New(val.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(val.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> /*bool*/ fromSetURI(const v8::Arguments& args/*std::string& from, const char* uri*/)
+JS_METHOD_IMPL(fromSetURI)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string newval = OSS::JS::string_from_js_string(args[1]);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (OSS::SIP::SIPFrom::setURI(input, newval.c_str()))
-    return v8::String::New(input.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(input.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> /*bool*/ fromGetHeaderParams(const v8::Arguments& args/*const std::string& from, std::string& headerParams*/)
+JS_METHOD_IMPL(fromGetHeaderParams)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
   std::string val;
   if (OSS::SIP::SIPFrom::getHeaderParams(input, val))
-    return v8::String::New(val.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(val.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> /*bool*/ fromSetHeaderParams(const v8::Arguments& args/*std::string& from, const char* headerParams*/)
+JS_METHOD_IMPL(fromSetHeaderParams)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string newval = OSS::JS::string_from_js_string(args[1]);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (OSS::SIP::SIPFrom::setHeaderParams(input, newval.c_str()))
-    return v8::String::New(input.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(input.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> /*bool*/ fromGetHeaderParam(const v8::Arguments& args/*const std::string& from, const char* paramName, std::string& paramValue*/)
+JS_METHOD_IMPL(fromGetHeaderParam)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string name = OSS::JS::string_from_js_string(args[1]);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string name = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   std::string val;
   if (OSS::SIP::SIPFrom::getHeaderParam(input, name.c_str(), val))
-    return v8::String::New(val.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(val.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> /*bool*/ fromGetHeaderParamEx(const v8::Arguments& args/*const std::string& headerParams, const char* paramName, std::string& paramValue*/)
+JS_METHOD_IMPL(fromGetHeaderParamEx)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string name = OSS::JS::string_from_js_string(args[1]);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string name = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   std::string val;
   if (OSS::SIP::SIPFrom::getHeaderParamEx(input, name.c_str(), val))
-    return v8::String::New(val.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(val.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> /*bool*/ fromSetHeaderParam(const v8::Arguments& args/*std::string& from, const char* paramName, const char* paramValue*/)
+JS_METHOD_IMPL(fromSetHeaderParam)
 {
-  if (args.Length() < 3)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string name = OSS::JS::string_from_js_string(args[1]);
-  std::string newval = OSS::JS::string_from_js_string(args[2]);
+  if (_args_.Length() < 3)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string name = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[2]);
   if (OSS::SIP::SIPFrom::setHeaderParam(input, name.c_str(), newval.c_str()))
-    return v8::String::New(input.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(input.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> /*bool*/ fromSetHeaderParamEx(const v8::Arguments& args/*std::string& headerParams, const char* paramName, const char* paramValue*/)
+JS_METHOD_IMPL(fromSetHeaderParamEx)
 {
-  if (args.Length() < 3)
-    return v8::Undefined();
-  std::string input = OSS::JS::string_from_js_string(args[0]);
-  std::string name = OSS::JS::string_from_js_string(args[1]);
-  std::string newval = OSS::JS::string_from_js_string(args[2]);
+  if (_args_.Length() < 3)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  std::string input = OSS::JS::string_from_js_string( js_method_isolate(), _args_[0]);
+  std::string name = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
+  std::string newval = OSS::JS::string_from_js_string( js_method_isolate(), _args_[2]);
   if (OSS::SIP::SIPFrom::setHeaderParamEx(input, name.c_str(), newval.c_str()))
-    return v8::String::New(input.c_str());
-  return v8::Undefined();
+  {
+    js_method_set_return_string(input.c_str());
+    return;
+  }
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> msgGetRequestUri(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetRequestUri)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string requestURI;
   if (SIPRequestLine::getURI(pMsg->startLine(), requestURI))
   {
-    return v8::String::New(requestURI.c_str());
+    js_method_set_return_string(requestURI.c_str());
+    return;
   }
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
 
-static v8::Handle<v8::Value> msgSetRequestUri(const v8::Arguments& args)
+JS_METHOD_IMPL(msgSetRequestUri)
 {
-  if (args.Length() < 2)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string uri = OSS::JS::string_from_js_string(args[1]);
+  std::string uri = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
 
   try
   {
-    return v8::Boolean::New(SIPRequestLine::setURI(pMsg->startLine(), uri.c_str()));
+    js_method_set_return_boolean(SIPRequestLine::setURI(pMsg->startLine(), uri.c_str()));
   }
   catch(...)
   {
-    return v8::Boolean::New(false);
+    js_method_set_return_false();
   }
 }
 
-static v8::Handle<v8::Value> msgGetRequestUriUser(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetRequestUriUser)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string requestURI;
   if (SIPRequestLine::getURI(pMsg->startLine(), requestURI))
   {
     std::string user;
     if (SIPURI::getUser(requestURI, user))
-      return v8::String::New(user.c_str());
+    {
+      js_method_set_return_string(user.c_str());
+      return;
+    }
   }
-  return v8::String::New("");
+  js_method_set_return_string("");
 }
 
-static v8::Handle<v8::Value> msgSetRequestUriUser(const v8::Arguments& args)
+JS_METHOD_IMPL(msgSetRequestUriUser)
 {
-  if (args.Length() < 2)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string user = OSS::JS::string_from_js_string(args[1]);
+  std::string user = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
 
   try
   {
@@ -1228,49 +1679,72 @@ static v8::Handle<v8::Value> msgSetRequestUriUser(const v8::Arguments& args)
     {
       SIPURI::setUserInfo(requestURI, user.c_str());
       if (SIPRequestLine::setURI(pMsg->startLine(), requestURI.c_str()))
-        return v8::Boolean::New(true);
+      {
+        js_method_set_return_true();
+        return;
+      }
       else
-        return v8::Boolean::New(false);
+      {
+        js_method_set_return_false();
+        return;
+      }
     }
   }
   catch(...)
   {
-    return v8::Boolean::New(false);
+    js_method_set_return_false();
+    return;
   }
-  return v8::Boolean::New(false);
+
+  js_method_set_return_false();
 }
 
-static v8::Handle<v8::Value> msgGetRequestUriHostPort(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetRequestUriHostPort)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string requestURI;
   if (SIPRequestLine::getURI(pMsg->startLine(), requestURI))
   {
     std::string hostPort;
     if (SIPURI::getHostPort(requestURI, hostPort))
-      return v8::String::New(hostPort.c_str());
+    {
+      js_method_set_return_string(hostPort.c_str());
+      return;
+    }
   }
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> msgSetRequestUriHostPort(const v8::Arguments& args)
+JS_METHOD_IMPL(msgSetRequestUriHostPort)
 {
-  if (args.Length() < 2)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string hostPort = OSS::JS::string_from_js_string(args[1]);
+  std::string hostPort = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
 
   try
   {
@@ -1279,89 +1753,129 @@ static v8::Handle<v8::Value> msgSetRequestUriHostPort(const v8::Arguments& args)
     {
       SIPURI::setHostPort(requestURI, hostPort.c_str());
       if (SIPRequestLine::setURI(pMsg->startLine(), requestURI.c_str()))
-        return v8::Boolean::New(true);
+      {
+        js_method_set_return_true();
+        return;
+      }
       else
-        return v8::Boolean::New(false);
+      {
+         js_method_set_return_false();
+        return;
+      }
     }
   }
   catch(...)
   {
-    return v8::Boolean::New(false);
+     js_method_set_return_false();
+     return;
   }
-  return v8::Boolean::New(false);
+   js_method_set_return_false();
 }
 
-static v8::Handle<v8::Value> msgGetRequestUriHost(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetRequestUriHost)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string requestURI;
   if (SIPRequestLine::getURI(pMsg->startLine(), requestURI))
   {
     std::string host;
     if (SIPURI::getHost(requestURI, host))
-      return v8::String::New(host.c_str());
+    {
+      js_method_set_return_string(host.c_str());
+      return;
+    }
   }
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> msgGetRequestUriPort(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetRequestUriPort)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string requestURI;
   if (SIPRequestLine::getURI(pMsg->startLine(), requestURI))
   {
     std::string port;
     if (SIPURI::getPort(requestURI, port))
-      return v8::String::New(port.c_str());
+    {
+      js_method_set_return_string(port.c_str());
+      return;
+    }
   }
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> msgGetRequestUriParameters(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetRequestUriParameters)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string requestURI;
   if (SIPRequestLine::getURI(pMsg->startLine(), requestURI))
   {
     std::string params;
     if (SIPURI::getParams(requestURI, params))
-      return v8::String::New(params.c_str());
+    {
+      js_method_set_return_string(params.c_str());
+      return;
+    }
   }
-  return v8::Undefined();
+  js_method_set_return_undefined();
 }
 
-static v8::Handle<v8::Value> msgSetRequestUriParameters(const v8::Arguments& args)
+JS_METHOD_IMPL(msgSetRequestUriParameters)
 {
-  if (args.Length() < 2)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
   
-  std::string params = OSS::JS::string_from_js_string(args[1]);
+  std::string params = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
 
   try
   {
@@ -1373,278 +1887,406 @@ static v8::Handle<v8::Value> msgSetRequestUriParameters(const v8::Arguments& arg
   }
   catch(...)
   {
-    return v8::Boolean::New(false);
+     js_method_set_return_false();
+     return;
   }
-  return v8::Boolean::New(true);
+  js_method_set_return_true();
 }
 
-v8::Handle<v8::Value> msgGetToUser(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetToUser)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string to = pMsg->hdrGet(OSS::SIP::HDR_TO);
   std::string user;
   if (!SIPFrom::getUser(to, user))
-    return v8::Undefined();
-  return v8::String::New(user.c_str());
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  js_method_set_return_string(user.c_str());
 }
 
-v8::Handle<v8::Value> msgSetToUser(const v8::Arguments& args)
+JS_METHOD_IMPL(msgSetToUser)
 {
-  if (args.Length() < 1)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
   try
   {
     std::string to = pMsg->hdrGet(OSS::SIP::HDR_TO);
-    std::string user = OSS::JS::string_from_js_string(args[1]);
+    std::string user = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
     if (!SIPFrom::setUser(to, user.c_str()))
-      return v8::Boolean::New(false);
+    {
+      js_method_set_return_false();
+      return;
+    }
     if (!pMsg->hdrSet(OSS::SIP::HDR_TO, to.c_str()))
-      return v8::Boolean::New(false);
-    return v8::Boolean::New(true);
+      {
+      js_method_set_return_false();
+      return;
+    }
+    js_method_set_return_true();
   }
   catch(...)
   {
-    return v8::Boolean::New(false);
+    js_method_set_return_false();
   }
 }
 
-v8::Handle<v8::Value> msgGetToHostPort(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetToHostPort)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string to = pMsg->hdrGet(OSS::SIP::HDR_TO);
   std::string hostPort;
   if (!SIPFrom::getHostPort(to, hostPort))
-    return v8::Undefined();
-  return v8::String::New(hostPort.c_str());
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  js_method_set_return_string(hostPort.c_str());
 }
 
-v8::Handle<v8::Value> msgGetToHost(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetToHost)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string to = pMsg->hdrGet(OSS::SIP::HDR_TO);
   std::string host;
   if (!SIPFrom::getHost(to, host))
-    return v8::Undefined();
-  return v8::String::New(host.c_str());
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  js_method_set_return_string(host.c_str());
 }
 
-v8::Handle<v8::Value> msgGetToPort(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetToPort)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string to = pMsg->hdrGet(OSS::SIP::HDR_TO);
   std::string host;
   if (!SIPFrom::getHostPort(to, host))
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
   
   std::vector<std::string> tokens = OSS::string_tokenize(host, ":");
   if (tokens.size() <= 1)
   {
-    return v8::Undefined();
+    js_method_set_return_undefined();
+    return;
   }
   
-  return v8::String::New(tokens[1].c_str());
+  js_method_set_return_string(tokens[1].c_str());
 }
 
-v8::Handle<v8::Value> msgSetToHostPort(const v8::Arguments& args)
+JS_METHOD_IMPL(msgSetToHostPort)
 {
-  if (args.Length() < 1)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
   try
   {
     std::string to = pMsg->hdrGet(OSS::SIP::HDR_TO);
-    std::string hostPort = OSS::JS::string_from_js_string(args[1]);
+    std::string hostPort = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
     if (!SIPFrom::setHostPort(to, hostPort.c_str()))
-      return v8::Boolean::New(false);
+    {
+      js_method_set_return_false();
+      return;
+    }
     if (!pMsg->hdrSet(OSS::SIP::HDR_TO, to.c_str()))
-      return v8::Boolean::New(false);
-    return v8::Boolean::New(true);
+    {
+      js_method_set_return_false();
+      return;
+    }
+    js_method_set_return_true();
   }
   catch(...)
   {
-    return v8::Boolean::New(false);
+    js_method_set_return_false();
   }
 }
 
-v8::Handle<v8::Value> msgGetFromUser(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetFromUser)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string to = pMsg->hdrGet(OSS::SIP::HDR_FROM);
   std::string user;
   if (!SIPFrom::getUser(to, user))
-    return v8::Undefined();
-  return v8::String::New(user.c_str());
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  js_method_set_return_string(user.c_str());
 }
 
-v8::Handle<v8::Value> msgSetFromUser(const v8::Arguments& args)
+JS_METHOD_IMPL(msgSetFromUser)
 {
-  if (args.Length() < 1)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
   try
   {
     std::string from = pMsg->hdrGet(OSS::SIP::HDR_FROM);
-    std::string user = OSS::JS::string_from_js_string(args[1]);
+    std::string user = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
     if (!SIPFrom::setUser(from, user.c_str()))
-      return v8::Boolean::New(false);
+    {
+      js_method_set_return_false();
+      return;
+    }
     if (!pMsg->hdrSet(OSS::SIP::HDR_FROM, from.c_str()))
-      return v8::Boolean::New(false);
-    return v8::Boolean::New(true);
+    {
+      js_method_set_return_false();
+      return;
+    }
+    js_method_set_return_true();
   }
   catch(...)
   {
-    return v8::Boolean::New(false);
+    js_method_set_return_false();
   }
 }
 
-v8::Handle<v8::Value> msgGetFromHostPort(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetFromHostPort)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string to = pMsg->hdrGet(OSS::SIP::HDR_FROM);
   std::string hostPort;
   if (!SIPFrom::getHostPort(to, hostPort))
-    return v8::Undefined();
-  return v8::String::New(hostPort.c_str());
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  js_method_set_return_string(hostPort.c_str());
 }
 
-v8::Handle<v8::Value> msgGetFromHost(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetFromHost)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string from = pMsg->hdrGet(OSS::SIP::HDR_FROM);
   std::string host;
   if (!SIPFrom::getHost(from, host))
-    return v8::Undefined();
-  return v8::String::New(host.c_str());
+  {
+    js_method_set_return_undefined();
+    return;
+  }
+  js_method_set_return_string(host.c_str());
 }
 
-v8::Handle<v8::Value> msgGetFromPort(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetFromPort)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string from = pMsg->hdrGet(OSS::SIP::HDR_FROM);
   std::string host;
   if (!SIPFrom::getHostPort(from, host))
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
   
   std::vector<std::string> tokens = OSS::string_tokenize(host, ":");
   if (tokens.size() <= 1)
   {
-    return v8::Undefined();
+    js_method_set_return_undefined();
+    return;
   }
   
-  return v8::String::New(tokens[1].c_str());
+  js_method_set_return_string(tokens[1].c_str());
 }
 
-v8::Handle<v8::Value> msgSetFromHostPort(const v8::Arguments& args)
+JS_METHOD_IMPL(msgSetFromHostPort)
 {
-  if (args.Length() < 1)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
   try
   {
     std::string from = pMsg->hdrGet(OSS::SIP::HDR_FROM);
-    std::string hostPort = OSS::JS::string_from_js_string(args[1]);
+    std::string hostPort = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
     if (!SIPFrom::setHostPort(from, hostPort.c_str()))
-      return v8::Boolean::New(false);
+    {
+      js_method_set_return_false();
+      return;
+    }
     if (!pMsg->hdrSet(OSS::SIP::HDR_FROM, from.c_str()))
-      return v8::Boolean::New(false);
-    return v8::Boolean::New(true);
+    js_method_set_return_true();
   }
   catch(...)
   {
-    return v8::Boolean::New(false);
+    js_method_set_return_false();
   }
 }
 
-v8::Handle<v8::Value> msgGetContactUri(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetContactUri)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string hContactList = pMsg->hdrGet(OSS::SIP::HDR_CONTACT);
   if (hContactList.empty())
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   ContactURI contact;
   if (!hContactList.empty())
@@ -1652,26 +2294,38 @@ v8::Handle<v8::Value> msgGetContactUri(const v8::Arguments& args)
 
   std::string contactUri = contact.getURI();
 
-  return v8::String::New(contactUri.c_str());
+  js_method_set_return_string(contactUri.c_str());
 }
 
-v8::Handle<v8::Value> msgGetContactParameter(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetContactParameter)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  std::string param = OSS::JS::string_from_js_string(args[1]);
+  std::string param = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   if (param.empty())
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   std::string hContactList = pMsg->hdrGet(OSS::SIP::HDR_CONTACT);
   if (hContactList.empty())
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   ContactURI contact;
   if (!hContactList.empty())
@@ -1679,22 +2333,31 @@ v8::Handle<v8::Value> msgGetContactParameter(const v8::Arguments& args)
 
   std::string value = contact.getHeaderParam(param.c_str());
   if (value.empty())
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  return v8::String::New(value.c_str());
+  js_method_set_return_string(value.c_str());
 }
 
-v8::Handle<v8::Value> msgGetAuthenticator(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetAuthenticator)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  std::string realm = OSS::JS::string_from_js_string(args[1]);
+  std::string realm = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
   OSS::string_to_lower(realm);
 
   int wwwAuthSize = pMsg->hdrGetSize(OSS::SIP::HDR_AUTHORIZATION);
@@ -1754,176 +2417,254 @@ v8::Handle<v8::Value> msgGetAuthenticator(const v8::Arguments& args)
     }
   }
 
-  return v8::String::New(authenticator.c_str());
+  js_method_set_return_string(authenticator.c_str());
 }
 
-static v8::Handle<v8::Value> msgSetTransactionProperty(const v8::Arguments& args)
+JS_METHOD_IMPL(msgSetTransactionProperty)
 {
-  if (args.Length() < 3)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 3)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
   SIPB2BTransaction* pTrn = static_cast<SIPB2BTransaction*>(pMsg->userData());
   if (!pTrn)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string name = OSS::JS::string_from_js_string(args[1]);
-  std::string value = OSS::JS::string_from_js_string(args[2]);
+  std::string name = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
+  std::string value = OSS::JS::string_from_js_string( js_method_isolate(), _args_[2]);
 
   if (name.empty() || value.empty())
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
   pTrn->setProperty(name, value);
 
-  return v8::Boolean::New(true);
+  js_method_set_return_true();
 }
 
-static v8::Handle<v8::Value> msgGetTransactionProperty(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetTransactionProperty)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   SIPB2BTransaction* pTrn = static_cast<SIPB2BTransaction*>(pMsg->userData());
   if (!pTrn)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  std::string name = OSS::JS::string_from_js_string(args[1]);
+  std::string name = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
 
   if (name.empty())
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
   std::string value;
   if (name == "log-id")
     value = pTrn->getLogId();
   else
     pTrn->getProperty(name, value);
 
-  return v8::String::New(value.c_str());
+  js_method_set_return_string(value.c_str());
 }
 
-static v8::Handle<v8::Value> msgSetProperty(const v8::Arguments& args)
+JS_METHOD_IMPL(msgSetProperty)
 {
-  if (args.Length() < 3)
-    return v8::Boolean::New(false);
+  if (_args_.Length() < 3)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string name = OSS::JS::string_from_js_string(args[1]);
-  std::string value = OSS::JS::string_from_js_string(args[2]);
+  std::string name = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
+  std::string value = OSS::JS::string_from_js_string( js_method_isolate(), _args_[2]);
 
   if (name.empty() || value.empty())
-    return v8::Boolean::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
   pMsg->setProperty(name, value);
 
-  return v8::Boolean::New(true);
+  js_method_set_return_true();
 }
 
-static v8::Handle<v8::Value> msgGetProperty(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetProperty)
 {
-  if (args.Length() < 2)
-    return v8::Undefined();
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  std::string name = OSS::JS::string_from_js_string(args[1]);
+  std::string name = OSS::JS::string_from_js_string( js_method_isolate(), _args_[1]);
 
   if (name.empty())
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
   std::string value;
   pMsg->getProperty(name, value);
 
-  return v8::String::New(value.c_str());
+  js_method_set_return_string(value.c_str());
 }
 
 
-static v8::Handle<v8::Value> msgGetSourceAddress(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetSourceAddress)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   SIPB2BTransaction* pTrn = static_cast<SIPB2BTransaction*>(pMsg->userData());
   if (!pTrn || !pTrn->serverTransport())
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   OSS::Net::IPAddress addr = pTrn->serverTransport()->getRemoteAddress();
 
-  return v8::String::New(addr.toString().c_str());
+  js_method_set_return_string(addr.toString().c_str());
 }
 
-static v8::Handle<v8::Value> msgGetSourcePort(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetSourcePort)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   SIPB2BTransaction* pTrn = static_cast<SIPB2BTransaction*>(pMsg->userData());
   if (!pTrn || !pTrn->serverTransport())
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   OSS::Net::IPAddress addr = pTrn->serverTransport()->getRemoteAddress();
 
-  return v8::Integer::New(addr.getPort());
+  js_method_set_return_integer(addr.getPort());
 }
 
-static v8::Handle<v8::Value> msgGetInterfaceAddress(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetInterfaceAddress)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   SIPB2BTransaction* pTrn = static_cast<SIPB2BTransaction*>(pMsg->userData());
   if (!pTrn || !pTrn->serverTransport())
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   OSS::Net::IPAddress addr = pTrn->serverTransport()->getLocalAddress();
-  return v8::String::New(addr.toString().c_str());
+  js_method_set_return_string(addr.toString().c_str());
 }
 
-static v8::Handle<v8::Value> msgGetInterfacePort(const v8::Arguments& args)
+JS_METHOD_IMPL(msgGetInterfacePort)
 {
-  if (args.Length() < 1)
-    return v8::Undefined();
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  v8::HandleScope scope;
-  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = OSS::JS::unwrap_external_object<OSS::SIP::SIPMessage>(_args_);
   if (!pMsg)
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   SIPB2BTransaction* pTrn = static_cast<SIPB2BTransaction*>(pMsg->userData());
   if (!pTrn || !pTrn->serverTransport())
-    return v8::Undefined();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
   OSS::Net::IPAddress addr = pTrn->serverTransport()->getLocalAddress();
 
-  return v8::Integer::New(addr.getPort());
+  js_method_set_return_integer(addr.getPort());
 }
 
 JS_EXPORTS_INIT()

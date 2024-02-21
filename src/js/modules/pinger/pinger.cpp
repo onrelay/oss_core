@@ -25,7 +25,7 @@
 struct ping_host_data_t
 {
   OSS::JS::JSIsolate::Ptr isolate;
-  JSPersistentFunctionHandle* cb;
+  JSCopyablePersistentFunctionHandle* cb;
   std::string host;
   bool timeout; 
   int sequence;
@@ -38,20 +38,26 @@ static void ping_host_callback_isolated(void* user_data)
 {
   ping_host_data_t* data = static_cast<ping_host_data_t*>(user_data);
   assert(data);
+
+  v8::Isolate* isolate = data->isolate->getV8Isolate();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+  v8::Local<v8::Object> global = context->Global();
   
-  JSLocalValueHandle result = JSObject();
-  result->ToObject()->Set(JSLiteral("host"), JSString(data->host.c_str()));
-  result->ToObject()->Set(JSLiteral("timeout"), JSBoolean(data->timeout));
-  result->ToObject()->Set(JSLiteral("sequence"), JSInt32(data->sequence));
-  result->ToObject()->Set(JSLiteral("bytes"), JSInt32(data->bytes));
-  result->ToObject()->Set(JSLiteral("ttl"), JSInt32(data->ttl));
-  result->ToObject()->Set(JSLiteral("roundtrip"), JSInt32(data->roundtrip));
+  JSLocalValueHandle result = JSObject(isolate);
+  result->ToObject(context).ToLocalChecked()->Set(context, JSString(isolate,"host"), JSString(isolate,data->host.c_str()));
+  result->ToObject(context).ToLocalChecked()->Set(context, JSString(isolate,"timeout"), JSBoolean(isolate,data->timeout));
+  result->ToObject(context).ToLocalChecked()->Set(context, JSString(isolate,"sequence"), JSInt32(isolate,data->sequence));
+  result->ToObject(context).ToLocalChecked()->Set(context, JSString(isolate,"bytes"), JSInt32(isolate,data->bytes));
+  result->ToObject(context).ToLocalChecked()->Set(context, JSString(isolate,"ttl"), JSInt32(isolate,data->ttl));
+  result->ToObject(context).ToLocalChecked()->Set(context, JSString(isolate,"roundtrip"), JSInt32(isolate,data->roundtrip));
   
   JSLocalArgumentVector args;
   args.push_back(result);
+
+  JSFunctionHandle callback = data->cb->Get(isolate);
  
-  (*data->cb)->Call(js_get_global(), args.size(), args.data());
-  data->cb->Dispose();
+  callback->Call(context, global, args.size(), args.data());
+  data->cb->Reset();
   delete data->cb;
   delete data;
 }
@@ -75,7 +81,7 @@ static void ping_host_callback(const std::string& host, bool timeout, int sequen
 
 JS_METHOD_IMPL(__ping_host)
 {
-  js_method_arg_assert_size_eq(4);
+  js_method_args_assert_size_eq(4);
   js_method_arg_assert_string(0);
   js_method_arg_assert_uint32(1);
   js_method_arg_assert_uint32(2);
@@ -86,11 +92,11 @@ JS_METHOD_IMPL(__ping_host)
   
   ping_host_data_t* data = new ping_host_data_t();
   
-  data->cb = new JSPersistentFunctionHandle;
+  data->cb = new JSCopyablePersistentFunctionHandle;
   data->isolate = OSS::JS::JSIsolate::getIsolate();
   
   *data->cb = js_method_arg_as_persistent_function(3);
-  return JSBoolean(OSS::Net::Pinger::ping_host(host, sequence, ttl, boost::bind(ping_host_callback, _1, _2, _3, _4, _5, _6, _7), (void*)data));
+  js_method_set_return_boolean(OSS::Net::Pinger::ping_host(host, sequence, ttl, boost::bind(ping_host_callback, _1, _2, _3, _4, _5, _6, _7), (void*)data));
 }
 
 JS_EXPORTS_INIT()

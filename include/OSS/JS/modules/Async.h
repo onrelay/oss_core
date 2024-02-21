@@ -42,7 +42,7 @@ typedef boost::future<std::string> AsyncFuture;
 struct Async
 {
   static pthread_t _threadId;
-  static v8::Persistent<v8::ObjectTemplate> _externalPointerTemplate;
+  static JSCopyablePersistentObjectTemplateHandle _externalPointerTemplate;
   
   static void unmonitor_fd(const OSS::JS::JSIsolate::Ptr& pIsolate, int fd);
     // Forcibly unmonitor a particular file handle.  Use with extreme caution.

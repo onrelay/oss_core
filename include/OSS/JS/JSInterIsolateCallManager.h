@@ -38,7 +38,6 @@ class JSInterIsolateCallManager : public JSEventLoopComponent
 {
 public:
   typedef std::queue<JSInterIsolateCall::Ptr> CallQueue;
-  typedef JSPersistentValue<v8::Function> Handler;
   typedef JSInterIsolateCall::Request Request;
   typedef JSInterIsolateCall::Result Result;
   
@@ -50,7 +49,7 @@ public:
   void notify(const Request& request, void* userData, JSPersistentFunctionHandle* cb);
   bool execute(const std::string& request, std::string& result, uint32_t timeout, void* userData);
   bool execute(const Request& request, Result& result, uint32_t timeout, void* userData);
-  void setHandler(const JSPersistentFunctionHandle& handler);
+  void setHandler(const JSCopyablePersistentFunctionHandle& handler);
   bool doOneWork();
   bool isEnabled();
 protected:
@@ -58,7 +57,7 @@ protected:
   JSInterIsolateCall::Ptr dequeue();
   OSS::mutex_critic_sec _queueMutex;
   CallQueue _queue;
-  Handler _handler;
+  JSCopyablePersistentFunctionHandle _handler;
   friend class JSEventLoop;
 };
 
@@ -66,14 +65,14 @@ protected:
 // Inlines
 //
 
-inline void JSInterIsolateCallManager::setHandler(const JSPersistentFunctionHandle& handler)
+inline void JSInterIsolateCallManager::setHandler(const JSCopyablePersistentFunctionHandle& handler)
 {
   _handler = handler;
 }
 
 inline bool JSInterIsolateCallManager::isEnabled()
 {
-  return !_handler.empty();
+  return !_handler.IsEmpty();
 }
 
 } }

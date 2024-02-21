@@ -24,14 +24,18 @@
 
 typedef std::vector<pollfd> PollFD;
 
-static void array_to_pollfd_vector(v8::Handle<v8::Array>& input, PollFD& output)
+static void array_to_pollfd_vector(v8::Isolate* isolate, v8::Handle<v8::Array>& input, PollFD& output)
 {
-  v8::HandleScope scope;
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+
   for(uint32_t i = 0; i < input->Length(); i++)
   {
-    v8::Handle<v8::Object> item = input->Get(i)->ToObject();
-    v8::Handle<v8::Integer> fd = item->Get(v8::String::New("fd"))->ToInteger();
-    v8::Handle<v8::Integer> events = item->Get(v8::String::New("events"))->ToInteger();
+    v8::Handle<v8::Object> item = 
+      input->Get(context,i).ToLocalChecked()->ToObject(context).ToLocalChecked();
+    v8::Handle<v8::Integer> fd = 
+      item->Get(context,JSString(isolate,"fd")).ToLocalChecked()->ToInteger(context).ToLocalChecked();
+    v8::Handle<v8::Integer> events = 
+      item->Get(context,JSString(isolate,"events")).ToLocalChecked()->ToInteger(context).ToLocalChecked();
 
     pollfd pfd;
     pfd.fd = fd->Value();
@@ -41,66 +45,69 @@ static void array_to_pollfd_vector(v8::Handle<v8::Array>& input, PollFD& output)
   }
 }
 
-static void pollfd_vector_to_array(PollFD& input, v8::Handle<v8::Array>& output)
+static void pollfd_vector_to_array(v8::Isolate* isolate, PollFD& input, v8::Handle<v8::Array>& output)
 {
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+
   uint32_t index = 0;
   for (PollFD::iterator iter = input.begin(); iter != input.end(); iter++)
   {
-    v8::Handle<v8::Object> item = v8::Object::New();
-    v8::Handle<v8::Integer> fd = v8::Integer::New(iter->fd);
-    v8::Handle<v8::Integer> events = v8::Integer::New(iter->events);
-    v8::Handle<v8::Integer> revents = v8::Integer::New(iter->revents);
+    v8::Handle<v8::Object> item = JSObject(isolate);
+    v8::Handle<v8::Integer> fd = JSInteger(isolate,iter->fd);
+    v8::Handle<v8::Integer> events = JSInteger(isolate,iter->events);
+    v8::Handle<v8::Integer> revents = JSInteger(isolate,iter->revents);
     
-    item->Set(v8::String::New("fd"), fd);
-    item->Set(v8::String::New("events"), events);
-    item->Set(v8::String::New("revents"), revents);
+    item->Set(context, JSString(isolate,"fd"), fd);
+    item->Set(context, JSString(isolate,"events"), events);
+    item->Set(context, JSString(isolate,"revents"), revents);
     
-    output->Set(index++, item);
+    output->Set(context, index++, item);
   }
 }
 
-static v8::Handle<v8::Value> __poll(const v8::Arguments& args)
+JS_METHOD_IMPL(__poll)
 {
-  if (args.Length() < 1 || !args[0]->IsArray())
+  if (_args_.Length() < 1 || !_args_[0]->IsArray())
   {
-    return v8::Undefined();
+    js_method_set_return_undefined();
+    return;
   }
-  v8::HandleScope scope;
+  js_method_enter_scope();
   
   PollFD pfds;
-  v8::Handle<v8::Array> args0 = v8::Handle<v8::Array>::Cast(args[0]);
+  v8::Handle<v8::Array> args0 = v8::Handle<v8::Array>::Cast(_args_[0]);
   int timeout = -1;
-  array_to_pollfd_vector(args0, pfds);
+  array_to_pollfd_vector(js_method_isolate(), args0, pfds);
   
-  if (args.Length() >= 2 && args[1]->IsNumber())
+  if (_args_.Length() >= 2 && _args_[1]->IsNumber())
   {
-    timeout = args[1]->IntegerValue();
+    timeout = _args_[1]->IntegerValue(js_method_context()).ToChecked();
   }
   
-  v8::Handle<v8::Array> result = v8::Array::New(2);
+  v8::Handle<v8::Array> result = js_method_array(2);
   int ret = ::poll(pfds.data(), pfds.size(), timeout);
-  result->Set(0, v8::Integer::New(ret));
+  result->Set(js_method_context(), 0, js_method_integer(ret));
   
   if (ret == 0 || ret == -1)
   {
-    return result;
+    js_method_set_return_handle(result);
+    return;
   }
   
-  v8::Handle<v8::Array> pfdsout = v8::Array::New(pfds.size());
-  pollfd_vector_to_array(pfds, pfdsout);
-  result->Set(1, pfdsout);
-  return result;
+  v8::Handle<v8::Array> pfdsout = js_method_array(pfds.size());
+  pollfd_vector_to_array(js_method_isolate(), pfds, pfdsout);
+  result->Set(js_method_context(), 1, pfdsout);
+  js_method_set_return_handle(result);
 }
 
-static v8::Handle<v8::Value> init_exports(const v8::Arguments& args)
+JS_EXPORTS_INIT()
 {
-  v8::HandleScope scope; 
-  v8::Persistent<v8::Object> exports = v8::Persistent<v8::Object>::New(v8::Object::New());
-  
   //
   // Methods
   //
-  exports->Set(v8::String::New("poll"), v8::FunctionTemplate::New(__poll)->GetFunction());
+
+  js_export_method("poll", __poll );
+
   //
   // Mutable Properties
   //
@@ -108,28 +115,28 @@ static v8::Handle<v8::Value> init_exports(const v8::Arguments& args)
   //
   // Constants
   //
-  CONST_EXPORT(POLLIN);  /* There is data to read.  */
-  CONST_EXPORT(POLLPRI);  /* There is urgent data to read.  */
-  CONST_EXPORT(POLLOUT);  /* Writing now will not block.  */
+  js_export_const(POLLIN);  /* There is data to read.  */
+  js_export_const(POLLPRI);  /* There is urgent data to read.  */
+  js_export_const(POLLOUT);  /* Writing now will not block.  */
 
   #if defined __USE_XOPEN || defined __USE_XOPEN2K8
-    CONST_EXPORT(POLLRDNORM);  /* Normal data may be read.  */
-    CONST_EXPORT(POLLRDBAND);  /* Priority data may be read.  */
-    CONST_EXPORT(POLLWRNORM);  /* Writing now will not block.  */
-    CONST_EXPORT(POLLWRBAND);  /* Priority data may be written.  */
+    js_export_const(POLLRDNORM);  /* Normal data may be read.  */
+    js_export_const(POLLRDBAND);  /* Priority data may be read.  */
+    js_export_const(POLLWRNORM);  /* Writing now will not block.  */
+    js_export_const(POLLWRBAND);  /* Priority data may be written.  */
   #endif
 
   #ifdef __USE_GNU
-    CONST_EXPORT(POLLMSG);
-    CONST_EXPORT(POLLREMOVE);
-    CONST_EXPORT(POLLRDHUP);
+    js_export_const(POLLMSG);
+    js_export_const(POLLREMOVE);
+    js_export_const(POLLRDHUP);
   #endif
 
-  CONST_EXPORT(POLLERR);    /* Error condition.  */
-  CONST_EXPORT(POLLHUP);    /* Hung up.  */
-  CONST_EXPORT(POLLNVAL);   /* Invalid polling request.  */
+  js_export_const(POLLERR);    /* Error condition.  */
+  js_export_const(POLLHUP);    /* Hung up.  */
+  js_export_const(POLLNVAL);   /* Invalid polling request.  */
 
-  return exports;
+  js_export_finalize();
 }
 
 JS_REGISTER_MODULE(Poll);

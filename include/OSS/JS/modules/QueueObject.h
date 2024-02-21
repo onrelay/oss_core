@@ -37,8 +37,6 @@ public:
     int fd;
     std::string json;
   };
-  typedef std::vector< v8::Persistent<v8::Value> > EventData;
-  typedef v8::Persistent<v8::Function> EventCallback;
   typedef std::map<int, QueueObject*> ActiveQueues;
   typedef std::queue<JsonEvent> JsonQueue;
   
@@ -46,15 +44,15 @@ public:
   {
   public:
     typedef boost::shared_ptr<Event> Ptr;
-    QueueObject::EventData _eventData;
+    JSCopyablePersistentArgumentVector _eventData;
     Event()
     {
     }
     ~Event()
     {
-      for (EventData::iterator iter = _eventData.begin(); iter != _eventData.end(); iter++)
+      for (JSCopyablePersistentArgumentVector::iterator iter = _eventData.begin(); iter != _eventData.end(); iter++)
       {
-        iter->Dispose();
+        iter->Reset();
       }
     }
   };
@@ -67,7 +65,7 @@ public:
   
   
   EventQueue _queue;
-  EventCallback _eventCallback;
+  JSCopyablePersistentFunctionHandle _eventCallback;
   
 private:
   QueueObject();

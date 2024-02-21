@@ -57,15 +57,15 @@ ESLConnectionObject::~ESLConnectionObject()
 JS_CONSTRUCTOR_IMPL(ESLConnectionObject)
 {
   ESLConnectionObject* obj = new ESLConnectionObject();
-  obj->Wrap(js_method_arg_self());
-  return js_method_arg_self();
+  obj->Wrap(js_method_self());
+  js_method_set_return_self();
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::connect)
 {
   
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
-  js_method_arg_assert_size_gteq(3);
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
+  js_method_args_assert_size_gteq(3);
   js_method_arg_assert_string(0);
   js_method_arg_assert_uint32(1);
   js_method_arg_assert_string(2);
@@ -76,171 +76,182 @@ JS_METHOD_IMPL(ESLConnectionObject::connect)
   
   OSS_LOG_INFO("Connecting to " << host << ":" << port);
   
-  return JSBoolean(pObject->_connection->connect(host, port, password));
+  js_method_set_return_boolean(pObject->_connection->connect(host, port, password));
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::getInfo)
 {
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
   ESLEvent::Ptr pResponse = pObject->_connection->getInfo();
   if (!pResponse)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(pResponse->data());
+  js_method_set_return_string(pResponse->data());
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::send)
 {
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
-  js_method_arg_assert_size_gteq(1);
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
+  js_method_args_assert_size_gteq(1);
   std::string cmd = js_method_arg_as_std_string(0);
-  return JSBoolean(pObject->_connection->send(cmd));
+  js_method_set_return_boolean(pObject->_connection->send(cmd));
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::sendRecv)
 {
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
-  js_method_arg_assert_size_gteq(1);
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
+  js_method_args_assert_size_gteq(1);
   std::string cmd = js_method_arg_as_std_string(0);
   ESLEvent::Ptr pResponse = pObject->_connection->sendRecv(cmd);
   if (!pResponse)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(pResponse->data());
+  js_method_set_return_string(pResponse->data());
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::api)
 {
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
-  js_method_arg_assert_size_gteq(2);
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
+  js_method_args_assert_size_gteq(2);
   std::string cmd = js_method_arg_as_std_string(0);
   std::string arg = js_method_arg_as_std_string(1);
   ESLEvent::Ptr pResponse = pObject->_connection->api(cmd, arg);
   if (!pResponse)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(pResponse->data());
+  js_method_set_return_string(pResponse->data());
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::bgapi)
 {
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
-  js_method_arg_assert_size_gteq(3);
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
+  js_method_args_assert_size_gteq(3);
   std::string cmd = js_method_arg_as_std_string(0);
   std::string arg = js_method_arg_as_std_string(1);
   std::string uuid = js_method_arg_as_std_string(2);
   ESLEvent::Ptr pResponse = pObject->_connection->bgapi(cmd, arg, uuid);
   if (!pResponse)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(pResponse->data());
+  js_method_set_return_string(pResponse->data());
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::sendEvent)
 {
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
-  js_method_arg_assert_size_gteq(1);
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
+  js_method_args_assert_size_gteq(1);
   ESLEventObject* pEvent = js_method_arg_as_esl_event(0);
   if (!pEvent)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
   ESLEvent::Ptr pResponse = pObject->_connection->sendEvent(pEvent->_event);
   if (!pResponse)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(pResponse->data());
+  js_method_set_return_string(pResponse->data());
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::sendMsg)
 {
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
-  js_method_arg_assert_size_gteq(2);
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
+  js_method_args_assert_size_gteq(2);
   ESLEventObject* pEvent = js_method_arg_as_esl_event(0);
   std::string uuid = js_method_arg_as_std_string(1);
   if (!pEvent)
   {
-    return JSFalse;
+    js_method_set_return_false();
+    return;
   }
-  return JSBoolean(pObject->_connection->sendMsg(pEvent->_event, uuid));
+  js_method_set_return_boolean(pObject->_connection->sendMsg(pEvent->_event, uuid));
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::recvEvent)
 {
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
   ESLEvent::Ptr pResponse = pObject->_connection->recvEvent();
   if (!pResponse)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(pResponse->data());
+  js_method_set_return_string(pResponse->data());
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::recvEventTimed)
 {
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
-  js_method_arg_assert_size_gteq(1);
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
+  js_method_args_assert_size_gteq(1);
   int timeout = js_method_arg_as_int32(0);
   ESLEvent::Ptr pResponse = pObject->_connection->recvEventTimed(timeout);
   if (!pResponse)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(pResponse->data());
+  js_method_set_return_string(pResponse->data());
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::filter)
 {
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
-  js_method_arg_assert_size_gteq(2);
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
+  js_method_args_assert_size_gteq(2);
   std::string header = js_method_arg_as_std_string(0);
   std::string value = js_method_arg_as_std_string(1);
   ESLEvent::Ptr pResponse = pObject->_connection->filter(header, value);
   if (!pResponse)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(pResponse->data());
+  js_method_set_return_string(pResponse->data());
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::events)
 {
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
-  js_method_arg_assert_size_gteq(1);
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
+  js_method_args_assert_size_gteq(1);
   std::string value = js_method_arg_as_std_string(0);
-  return JSBoolean(pObject->_connection->events("json", value));
+  js_method_set_return_boolean(pObject->_connection->events("json", value));
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::execute)
 {
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
-  js_method_arg_assert_size_gteq(3);
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
+  js_method_args_assert_size_gteq(3);
   std::string app = js_method_arg_as_std_string(0);
   std::string arg = js_method_arg_as_std_string(1);
   std::string uuid = js_method_arg_as_std_string(2);
   ESLEvent::Ptr pResponse = pObject->_connection->execute(app, arg, uuid);
   if (!pResponse)
   {
-    return JSUndefined();
+    js_method_set_return_undefined();
+    return;
   }
-  return JSString(pResponse->data());
+  js_method_set_return_string(pResponse->data());
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::disconnect)
 {
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
-  return JSBoolean(pObject->_connection->disconnect());
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
+  js_method_set_return_boolean(pObject->_connection->disconnect());
 }
 
 JS_METHOD_IMPL(ESLConnectionObject::connected)
 {
-  ESLConnectionObject* pObject = js_method_arg_unwrap_self(ESLConnectionObject);
-  return JSBoolean(pObject->_connection->connected());
+  ESLConnectionObject* pObject = js_method_unwrap_self(ESLConnectionObject);
+  js_method_set_return_boolean(pObject->_connection->connected());
 }
 
 JS_EXPORTS_INIT()

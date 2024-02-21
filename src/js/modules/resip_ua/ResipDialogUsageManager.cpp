@@ -111,30 +111,30 @@ private:
 
 JS_METHOD_IMPL(ResipDialogUsageManager::sendClientSubscription)
 {
-  js_method_arg_declare_self(ResipDialogUsageManager, self);  
-  js_method_arg_declare_unwrapped_object(ResipUserProfile, profile, 0);
-  js_method_arg_declare_string(aor, 1);
-  js_method_arg_declare_string(event, 2);
-  js_method_arg_declare_uint32(subscriptionTime, 3);
-  js_method_arg_declare_int32(refreshInterval, 4);
+  js_method_declare_self(ResipDialogUsageManager, self);  
+  js_method_declare_unwrapped_object(ResipUserProfile, profile, 0);
+  js_method_declare_string(aor, 1);
+  js_method_declare_string(event, 2);
+  js_method_declare_uint32(subscriptionTime, 3);
+  js_method_declare_int32(refreshInterval, 4);
   
   Token eventToken(event.c_str());
   Uri uri(aor.c_str());
   SendClientSubscription* cmd = new SendClientSubscription(eventToken, *self, profile->profile(), uri, subscriptionTime, refreshInterval);
   self->dum()->post(cmd);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipDialogUsageManager::sendClientRegistration)
 {
-  js_method_arg_declare_self(ResipDialogUsageManager, self);  
-  js_method_arg_declare_unwrapped_object(ResipUserProfile, profile, 0);
-  js_method_arg_declare_string(aor, 1);
+  js_method_declare_self(ResipDialogUsageManager, self);  
+  js_method_declare_unwrapped_object(ResipUserProfile, profile, 0);
+  js_method_declare_string(aor, 1);
   
   Uri uri(aor.c_str());
   SendClientRegistration* cmd = new SendClientRegistration(*self, profile->profile(), uri);
   self->dum()->post(cmd);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_CLASS_INTERFACE(ResipDialogUsageManager, "DialogUsageManager") 
@@ -173,71 +173,71 @@ void ResipDialogUsageManager::onDumCanBeDeleted()
 JS_CONSTRUCTOR_IMPL(ResipDialogUsageManager)
 {
   OSS::JS::JSIsolate::getIsolate()->setForceAsync(true);
-  js_method_arg_declare_object(sipstack_object, 0);
+  js_method_declare_object(sipstack_object, 0);
   ResipSIPStack* sipstack = js_unwrap_object(ResipSIPStack, sipstack_object->ToObject());
   assert(sipstack);
   ResipDialogUsageManager* object = new ResipDialogUsageManager();
   object->_dum = new DialogUsageManager(*sipstack->stack());
   
-  std::auto_ptr<resip::ClientAuthManager> clam(new resip::ClientAuthManager());
+  std::unique_ptr<resip::ClientAuthManager> clam(new resip::ClientAuthManager());
   object->_dum->setClientAuthManager(clam);
   
   object->_thread = new DumThread(*object->_dum);
-  object->Wrap(js_method_arg_self());
-  return js_method_arg_self();
+  object->Wrap(js_method_self());
+  js_method_set_return_self();
 }
 
 JS_METHOD_IMPL(ResipDialogUsageManager::run)
 {
-  js_method_arg_declare_self(ResipDialogUsageManager, self);
+  js_method_declare_self(ResipDialogUsageManager, self);
   self->_thread->run();
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipDialogUsageManager::shutdown)
 {
-  js_method_arg_declare_self(ResipDialogUsageManager, self);
+  js_method_declare_self(ResipDialogUsageManager, self);
   self->_dum->shutdown(self);
   self->_thread->shutdown();
   self->_thread->join();
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
   
 JS_METHOD_IMPL(ResipDialogUsageManager::setMasterProfile)
 {
-  js_method_arg_declare_self(ResipDialogUsageManager, self);  
-  js_method_arg_declare_unwrapped_object(ResipMasterProfile, profile, 0);
+  js_method_declare_self(ResipDialogUsageManager, self);  
+  js_method_declare_unwrapped_object(ResipMasterProfile, profile, 0);
   self->dum()->setMasterProfile(profile->profile());
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipDialogUsageManager::addClientSubscriptionHandler)
 {
-  js_method_arg_declare_self(ResipDialogUsageManager, self);
-  js_method_arg_declare_string(event, 0);
-  js_method_arg_declare_unwrapped_object(ResipClientSubscriptionHandler, handler, 1);
+  js_method_declare_self(ResipDialogUsageManager, self);
+  js_method_declare_string(event, 0);
+  js_method_declare_unwrapped_object(ResipClientSubscriptionHandler, handler, 1);
   self->dum()->addClientSubscriptionHandler(event.c_str(), handler->handler());
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipDialogUsageManager::setClientRegistrationHandler)
 {
-  js_method_arg_declare_self(ResipDialogUsageManager, self);
-  js_method_arg_declare_unwrapped_object(ResipClientRegistrationHandler, handler, 0);
+  js_method_declare_self(ResipDialogUsageManager, self);
+  js_method_declare_unwrapped_object(ResipClientRegistrationHandler, handler, 0);
   self->dum()->setClientRegistrationHandler(handler->handler());
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipDialogUsageManager::overrideContact)
 {
   // This is only necessary if the user agent is running behind a NAT.
-  js_method_arg_declare_self(ResipDialogUsageManager, self);
-  js_method_arg_declare_string(host, 0);
-  js_method_arg_declare_uint32(port, 1);
+  js_method_declare_self(ResipDialogUsageManager, self);
+  js_method_declare_string(host, 0);
+  js_method_declare_uint32(port, 1);
   Uri contact;
   contact.host() = Data(host.c_str());
   contact.port() = port;
   SharedPtr<DumFeature> feature(new ResipOverrideContact(contact, *(self->dum()), self->dum()->dumOutgoingTarget()));
   self->dum()->addOutgoingFeature(feature);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }

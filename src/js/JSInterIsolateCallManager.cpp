@@ -17,6 +17,7 @@
 // DEALINGS IN THE SOFTWARE.
 //
 
+#include "OSS/JS/JSUtil.h"
 #include "OSS/JS/JSInterIsolateCallManager.h"
 #include "OSS/JS/JSIsolate.h"
 #include "OSS/JS/JSEventLoop.h"
@@ -62,8 +63,7 @@ bool JSInterIsolateCallManager::doOneWork()
   {
     return false;
   }
-  
-  js_enter_scope();
+  v8::HandleScope _scope_(getIsolate()->getV8Isolate());
   JSLocalObjectHandle pUserData = getIsolate()->wrapExternalPointer(pCall->getUserData());
   JSValueHandle request = getIsolate()->parseJSON(pCall->json());
   JSArgumentVector jsonArg;
@@ -73,15 +73,19 @@ bool JSInterIsolateCallManager::doOneWork()
   // Check if this is a callback notification
   //
   if (pCall->_cb) {
-    (*pCall->_cb)->Call(getGlobal(), jsonArg.size(), jsonArg.data());
+    JSFunctionHandle cb = JSFunctionHandle::New(getIsolate()->getV8Isolate(),*pCall->_cb);
+    cb->Call(getIsolate()->getV8Isolate()->GetCurrentContext(), 
+      getIsolate()->getGlobal(), 
+      jsonArg.size(), 
+      jsonArg.data());
     pCall->setValue("{}");
-    pCall->_cb->Dispose();
+    pCall->_cb->Reset();
     delete pCall->_cb;
     pCall->_cb = 0;
     return true;
   }
   
-  if (_handler.empty())
+  if (_handler.IsEmpty())
   {
     //
     // return true here so that the event loop knows we processed something
@@ -90,13 +94,24 @@ bool JSInterIsolateCallManager::doOneWork()
     return true;
   }
   
+  JSFunctionHandle handler = JSFunctionHandle::New(getIsolate()->getV8Isolate(),_handler);
 
-  JSValueHandle result =  _handler.value()->Call(getGlobal(), jsonArg.size(), jsonArg.data());
+  v8::MaybeLocal<v8::Value> maybeResult = handler->Call(getIsolate()->getV8Isolate()->GetCurrentContext(), 
+    getIsolate()->getGlobal(), 
+    jsonArg.size(), 
+    jsonArg.data());
+
+  if( maybeResult.IsEmpty() )
+  {
+    return false;
+  }
+
+  JSValueHandle result = maybeResult.ToLocalChecked();
 
   std::string value;
-  if (!result.IsEmpty() && result->IsString())
+  if( result->IsString())
   {
-    value = js_handle_as_std_string(result);
+    value = string_from_js_string( getIsolate()->getV8Isolate(), JSStringHandle::Cast( result ) );
   }
   pCall->setValue(value);
   return true;

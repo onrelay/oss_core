@@ -38,10 +38,10 @@ JSFileDescriptorManager::~JSFileDescriptorManager()
 {
 }
 
-void JSFileDescriptorManager::addFileDescriptor(int fd, v8::Handle<v8::Value> ioHandler, int events)
+void JSFileDescriptorManager::addFileDescriptor(v8::Isolate* isolate, int fd, v8::Handle<v8::Value> ioHandler, int events)
 {
   OSS::mutex_critic_sec_lock lock(_descriptorsMutex);
-  _descriptors[fd] = JSFileDescriptor::Ptr(new JSFileDescriptor(ioHandler, fd, events));
+  _descriptors[fd] = JSFileDescriptor::Ptr(new JSFileDescriptor(isolate, ioHandler, fd, events));
 }
 
 bool JSFileDescriptorManager::removeFileDescriptor(int fd)
@@ -75,7 +75,7 @@ void JSFileDescriptorManager::appendDescriptors(Descriptors& descriptors)
   }
 }
 
-bool JSFileDescriptorManager::signalIO(pollfd pfd)
+bool JSFileDescriptorManager::signalIO(v8::Isolate* isolate, pollfd pfd)
 {
   _descriptorsMutex.lock();
   DescriptorMap::iterator iter = _descriptors.find(pfd.fd);
@@ -85,7 +85,7 @@ bool JSFileDescriptorManager::signalIO(pollfd pfd)
     // unlock the mutex prior to calling signalIO for it may call our other 
     // functions that would attempt to lock the mutex resulting to a deadlock
     _descriptorsMutex.unlock(); 
-    pFD->signalIO(pfd);
+    pFD->signalIO(isolate, pfd);
     return true;
   }
   _descriptorsMutex.unlock();
@@ -94,24 +94,24 @@ bool JSFileDescriptorManager::signalIO(pollfd pfd)
 
 JS_METHOD_IMPL(JSFileDescriptorManager::monitor_descriptor)
 {
-  js_enter_scope();
+  js_method_enter_scope();
   js_method_declare_isolate(pIsolate);
-  js_method_arg_declare_uint32(fd, 0);
+  js_method_declare_uint32(fd, 0);
   js_method_arg_assert_function(1);
-  pIsolate->eventLoop()->fdManager().addFileDescriptor(fd, js_method_arg(1), POLLIN);
+  pIsolate->eventLoop()->fdManager().addFileDescriptor(js_method_isolate(), fd, js_method_arg(1), POLLIN);
   pIsolate->eventLoop()->wakeup();
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(JSFileDescriptorManager::unmonitor_descriptor)
 {
-  js_enter_scope();
+  js_method_enter_scope();
   js_method_declare_isolate(pIsolate);
-  js_method_arg_declare_uint32(fd, 0);
+  js_method_declare_uint32(fd, 0);
   js_method_arg_assert_function(1);
   pIsolate->eventLoop()->fdManager().removeFileDescriptor(fd);
   pIsolate->eventLoop()->wakeup();
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 

@@ -553,7 +553,7 @@ void CrashHandler::HandleSignal(int sig, void * /* info */, void *secret) {
           msg[0] = 0;
         }
         
-	char line_no[4];
+	char line_no[32];
 	strcat(msg, Safe::itoa(i - stackOffset, line_no));
         strcat(msg, " [");  // NOLINT(runtime/printf)
         strcat(msg, line);  // NOLINT(runtime/printf)

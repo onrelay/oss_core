@@ -40,16 +40,14 @@ class JSFileDescriptor
 public:
   typedef boost::shared_ptr<JSFileDescriptor> Ptr;
   JSFileDescriptor();
-  JSFileDescriptor(v8::Handle<v8::Value> ioHandler, int fd, int events);
+  JSFileDescriptor(v8::Isolate* isolate, v8::Handle<v8::Value> ioHandler, int fd, int events);
   ~JSFileDescriptor();
-  void setFileDescriptor(int fd);
   int getFileDescriptor() const;
-  void setIoHandler(v8::Handle<v8::Value> ioHandler);
-  const v8::Persistent<v8::Function>& getIoHandler() const;
+  const JSCopyablePersistentFunctionHandle& getIoHandler() const;
   pollfd& pollFd();
-  void signalIO(pollfd pfd);
+  void signalIO(v8::Isolate* isolate, pollfd pfd);
 protected:
-  v8::Persistent<v8::Function> _ioHandler;
+  JSCopyablePersistentFunctionHandle _ioHandler;
   pollfd _pollfd;
 };
   
@@ -60,9 +58,9 @@ inline JSFileDescriptor::JSFileDescriptor()
 {
 }
 
-inline JSFileDescriptor::JSFileDescriptor(v8::Handle<v8::Value> ioHandler, int fd, int events)
+inline JSFileDescriptor::JSFileDescriptor(v8::Isolate* isolate, v8::Handle<v8::Value> ioHandler, int fd, int events)
 {
-  _ioHandler = v8::Persistent<v8::Function>::New(v8::Handle<v8::Function>::Cast(ioHandler));
+  _ioHandler = JSCopyablePersistentFunctionHandle(isolate, v8::Handle<v8::Function>::Cast(ioHandler));
   _pollfd.fd = fd;
   _pollfd.events = events;
 }
@@ -71,13 +69,8 @@ inline JSFileDescriptor::~JSFileDescriptor()
 {
   if (!_ioHandler.IsEmpty())
   {
-    _ioHandler.Dispose();
+    _ioHandler.Reset();
   }
-}
-
-inline void JSFileDescriptor::setFileDescriptor(int fd)
-{
-  _pollfd.fd = fd;
 }
 
 inline int JSFileDescriptor::getFileDescriptor() const
@@ -85,12 +78,8 @@ inline int JSFileDescriptor::getFileDescriptor() const
   return _pollfd.fd;
 }
 
-inline void JSFileDescriptor::setIoHandler(v8::Handle<v8::Value> ioHandler)
-{
-  _ioHandler = v8::Persistent<v8::Function>::New(v8::Handle<v8::Function>::Cast(ioHandler));
-}
 
-inline const v8::Persistent<v8::Function>& JSFileDescriptor::getIoHandler() const
+inline const JSCopyablePersistentFunctionHandle& JSFileDescriptor::getIoHandler() const
 {
   return _ioHandler;
 }
@@ -100,15 +89,21 @@ inline pollfd& JSFileDescriptor::pollFd()
   return _pollfd;
 }
 
-inline void JSFileDescriptor::signalIO(pollfd pfd)
+inline void JSFileDescriptor::signalIO(v8::Isolate* isolate, pollfd pfd)
 {
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+  v8::Local<v8::Object> global = context->Global();
+
   std::vector< v8::Local<v8::Value> > args(2);
-  args[0] = v8::Int32::New(pfd.fd);
-  args[1] = v8::Int32::New(pfd.revents);
-  v8::Local<v8::Context> context = v8::Context::GetCalling();
-  assert(!context.IsEmpty());
+  args[0] = v8::Int32::New(isolate, pfd.fd);
+  args[1] = v8::Int32::New(isolate, pfd.revents);
+  // v8::Local<v8::Context> context = v8::Context::GetCalling();  
+  // NB! Both GetCalling and Isolate::GetCallingContext have been removed:
+  // "Calling context concept is not compatible with tail calls and will be removed."
+  //assert(!context.IsEmpty());
   assert(!_ioHandler.IsEmpty());
-  _ioHandler->Call(context->Global(), args.size(), args.data());
+  JSFunctionHandle ioFunctionHandler = JSFunctionHandle::New(isolate,_ioHandler);
+  ioFunctionHandler->Call(context, global, args.size(), args.data());
 }
 
 

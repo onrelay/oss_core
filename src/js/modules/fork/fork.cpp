@@ -25,17 +25,17 @@
 
 JS_METHOD_IMPL(__fork)
 {
-  return JSInt32(fork());
+  js_method_set_return_handle(js_method_int32(fork()));
 }
 
 JS_METHOD_IMPL(__wait)
 {
   int status = 0;
   pid_t pid = ::wait(&status);
-  JSObjectHandle result = JSObject();
-  result->Set(JSLiteral("pid"), JSUInt32(pid));
-  result->Set(JSLiteral("status"), JSUInt32(status));
-  return result;
+  JSObjectHandle result = js_method_object();
+  result->Set(js_method_context(),js_method_string("pid"), js_method_uint32(pid));
+  result->Set(js_method_context(),js_method_string("status"), js_method_uint32(status));
+  js_method_set_return_handle(result);
 }
 
 JS_EXPORTS_INIT()

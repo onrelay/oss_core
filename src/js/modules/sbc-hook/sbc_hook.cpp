@@ -46,136 +46,143 @@ namespace SIP {
 namespace SBC {
 
 
-typedef v8::Handle<v8::Value> jsval;
-typedef v8::Arguments jsargs;
-typedef v8::String jsstring;
-typedef v8::String::Utf8Value jsstringutf8;
-typedef v8::FunctionTemplate jsfunc;
-#define jsvoid v8::Undefined
-typedef v8::Boolean jsbool;
-typedef v8::Integer jsint;
-typedef v8::Number jsdouble;
-typedef v8::HandleScope jsscope;
-typedef v8::Handle<v8::External> jsfield;
 
 static SBCManager* _pSBCManager = 0;
 
-OSS::SIP::SIPMessage* unwrapRequest(const jsargs& args)
+OSS::SIP::SIPMessage* unwrapRequest(JSCallbackInfo _args_)
 {
-  if (args.Length() < 1)
+  if (_args_.Length() < 1)
     return 0;
-  jsval obj = args[0];
+  JSValueHandle obj = _args_[0];
   if (!obj->IsObject())
     return 0;
-  jsfield field = jsfield::Cast(obj->ToObject()->GetInternalField(0));
+  JSExternalHandle field = JSExternalHandle::Cast(obj->ToObject(js_method_context()).ToLocalChecked()->GetInternalField(0));
   void* ptr = field->Value();
   return static_cast<OSS::SIP::SIPMessage*>(ptr);
 }
 
-std::string jsvalToString(const jsval& str)
+std::string jsvalToString(JSCallbackInfo _args_, int index)
 {
-  if (!str->IsString())
+  if (!_args_[index]->IsString())
     return "";
-  jsstringutf8 value(str);
+  v8::String::Utf8Value value(js_method_isolate(),_args_[index]);
   return *value;
 }
 
-bool jsvalToBoolean(const jsval& str)
+bool jsvalToBoolean(JSCallbackInfo _args_, int index)
 {
-  if (!str->IsBoolean())
+  if (!_args_[index]->IsBoolean())
     return false;
-  return str->IsTrue();;
+  return _args_[index]->IsTrue();
 }
 
-int jsvalToInt(const jsval& str)
+int jsvalToInt(JSCallbackInfo _args_, int index)
 {
-  if (!str->IsNumber())
+  if (!_args_[index]->IsNumber())
     return 0;
-  return str->Int32Value();
+  return _args_[index]->Int32Value(js_method_context()).ToChecked();
 }
 
-static jsval msgRouteByAOR(const jsargs& args)
+JS_METHOD_IMPL(msgRouteByAOR)
 {
   if (!_pSBCManager)
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
 
   bool userComparisonOnly = true;
-  if (args.Length() == 2)
+  if (_args_.Length() == 2)
   {
-    userComparisonOnly = args[1]->IsTrue();
+    userComparisonOnly = _args_[1]->IsTrue();
   }
 
-  jsscope scope;
-  OSS::SIP::SIPMessage* pMsg = unwrapRequest(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = unwrapRequest(_args_);
   if (!pMsg)
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
 
   SIPB2BTransaction* pTrn = static_cast<SIPB2BTransaction*>(pMsg->userData());
   if (!pTrn)
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
 
   if (!_pSBCManager)
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
   OSS::Net::IPAddress localInterface;
   OSS::Net::IPAddress target;
 
-  return jsbool::New(_pSBCManager->onRouteByAOR(pMsg, pTrn, userComparisonOnly, localInterface, target));
+  js_method_set_return_boolean(_pSBCManager->onRouteByAOR(pMsg, pTrn, userComparisonOnly, localInterface, target));
 }
 
-static jsval msgRouteByRURI(const jsargs& args)
+JS_METHOD_IMPL(msgRouteByRURI)
 {
   if (!_pSBCManager)
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
 
-  jsscope scope;
-  OSS::SIP::SIPMessage* pMsg = unwrapRequest(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = unwrapRequest(_args_);
   if (!pMsg)
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
 
   SIPB2BTransaction* pTrn = static_cast<SIPB2BTransaction*>(pMsg->userData());
   if (!pTrn)
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
 
   if (!_pSBCManager)
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
 
-  return jsbool::New(_pSBCManager->onRouteByRURI(pMsg, pTrn));
+  js_method_set_return_boolean(_pSBCManager->onRouteByRURI(pMsg, pTrn));
 }
 
 
-static jsval msgResetMaxForwards(const jsargs& args)
+JS_METHOD_IMPL(msgResetMaxForwards)
 {
-  if (args.Length() < 2)
-    return jsbool::New(false);
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  jsscope scope;
-  OSS::SIP::SIPMessage* pMsg = unwrapRequest(args);
+  js_method_enter_scope();
+  OSS::SIP::SIPMessage* pMsg = unwrapRequest(_args_);
   if (!pMsg)
-    return jsbool::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string maxForwards = jsvalToString(args[1]);
+  std::string maxForwards = jsvalToString(_args_,1);
   if (maxForwards.empty())
-    return jsbool::New(false);
+  {
+    js_method_set_return_false();
+    return;
+  }
 
   if (!_pSBCManager)
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
   //
   // First check if we are not spiraling by checking the via address
@@ -195,39 +202,48 @@ static jsval msgResetMaxForwards(const jsargs& args)
       OSS::Net::IPAddress address(OSS::Net::IPAddress::fromV4IPPort(sentBy.c_str()));
 
       if (_pSBCManager->isLocalTransport(transport, address))
-        return jsbool::New(false);
+      {
+        js_method_set_return_false();
+    return;
+      }
     }
   }
 
   pMsg->hdrSet("Max-Forwards", maxForwards);
 
-  return jsbool::New(true);
+  js_method_set_return_true();
 }
 
-jsval sbc_jsexec_async(const jsargs& args)
+JS_METHOD_IMPL(sbc_jsexec_async)
 {
-  if (args.Length() < 2)
-    return jsvoid();
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  std::string bin = jsvalToString(args[0]);
-  std::string commandArgs = jsvalToString(args[1]);
+  std::string bin = jsvalToString(_args_,0);
+  std::string commandArgs = jsvalToString(_args_,1);
 
 #if OSS_OS_FAMILY_WINDOWS
   return jsvoid();
 #else
   std::ostringstream cmd;
   cmd << bin << " " << commandArgs;
-  return jsint::New(system(cmd.str().c_str()));
+  js_method_set_return_integer(system(cmd.str().c_str()));
 #endif
 }
 
-jsval sbc_jsexec(const jsargs& args)
+JS_METHOD_IMPL(sbc_jsexec)
 {
-  if (args.Length() < 2)
-    return jsvoid();
+  if (_args_.Length() < 2)
+  {
+    js_method_set_return_undefined();
+    return;
+  }
 
-  std::string bin = jsvalToString(args[0]);
-  std::string commandArgs = jsvalToString(args[1]);
+  std::string bin = jsvalToString(_args_,0);
+  std::string commandArgs = jsvalToString(_args_,1);
   std::ostringstream cmd;
   cmd << bin << " " << commandArgs;
   std::string command = cmd.str();
@@ -236,7 +252,10 @@ jsval sbc_jsexec(const jsargs& args)
   std::string result;
   result.reserve(1024);
   if (!fd)
-      return jsvoid();
+  {
+    js_method_set_return_undefined();
+    return;
+  }
   while (true)
   {
     int c = fgetc(fd);
@@ -246,137 +265,152 @@ jsval sbc_jsexec(const jsargs& args)
       pclose(fd);
   }
 
-  return jsstring::New(result.c_str());
+  js_method_set_return_string(result.c_str());
 #else
-  return jsvoid();
+  js_method_set_return_undefined();
 #endif
 
 }
 
 
-jsval sbc_white_list_address(const jsargs& args)
+JS_METHOD_IMPL(sbc_white_list_address)
 {
-  if (args.Length() < 1)
-    return jsbool::New(false);
+  if (_args_.Length() < 1)
+  {
+    js_method_set_return_false();
+    return;
+  }
 
-  std::string entry = jsvalToString(args[0]);
+  std::string entry = jsvalToString(_args_,0);
 
   boost::system::error_code ec;
   boost::asio::ip::address ip = boost::asio::ip::address::from_string(entry, ec);
   if (!ec)
   {
     SIPTransportSession::rateLimit().whiteListAddress(ip);
-    return jsbool::New(true);
+    js_method_set_return_true();
+    return;
   }
 
-  return jsbool::New(false);
+  js_method_set_return_false();
 }
 
-jsval sbc_white_list_network(const jsargs& args)
+JS_METHOD_IMPL(sbc_white_list_network)
 {
-  if (args.Length() < 1)
+  if (_args_.Length() < 1)
   {
-    return jsvoid();
+    js_method_set_return_undefined();
+    return;
   }
 
-  std::string network = jsvalToString(args[0]);
+  std::string network = jsvalToString(_args_,0);
   if (!network.empty())
   {
     SIPTransportSession::rateLimit().whiteListNetwork(network);
   }
   
-  return jsvoid();
+  js_method_set_return_undefined();
 }
 
-jsval sbc_deny_all_incoming(const jsargs& args)
+JS_METHOD_IMPL(sbc_deny_all_incoming)
 {
-  if (args.Length() < 1)
-    return jsbool::New(false);
-
-  bool deny = jsvalToBoolean(args[0]);
-  SIPTransportSession::rateLimit().denyAll(deny);
-  return jsbool::New(true);
-}
-
-jsval sbc_set_transport_threshold(const jsargs& args)
-{
-  if (!_pSBCManager || args.Length() < 3)
+  if (_args_.Length() < 1)
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
+  }
+
+  bool deny = jsvalToBoolean(_args_,0);
+  SIPTransportSession::rateLimit().denyAll(deny);
+  js_method_set_return_true();
+}
+
+JS_METHOD_IMPL(sbc_set_transport_threshold)
+{
+  if (!_pSBCManager || _args_.Length() < 3)
+  {
+    js_method_set_return_false();
+    return;
   }
   
-  int packetsPerSecondThreshold = jsvalToInt(args[0]);
-  int thresholdViolationRate = jsvalToInt(args[1]);
-  int banLifeTime = jsvalToInt(args[2]);
+  int packetsPerSecondThreshold = jsvalToInt(_args_,0);
+  int thresholdViolationRate = jsvalToInt(_args_,1);
+  int banLifeTime = jsvalToInt(_args_,2);
   
   _pSBCManager->transactionManager().stack().setTransportThreshold(packetsPerSecondThreshold, thresholdViolationRate, banLifeTime);
   
-  return jsbool::New(true);
+  js_method_set_return_true();
 }
 
-jsval sbc_add_channel_limit(const jsargs& args)
+JS_METHOD_IMPL(sbc_add_channel_limit)
 {
-  if (!_pSBCManager || args.Length() < 2)
+  if (!_pSBCManager || _args_.Length() < 2)
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
   
-  std::string prefix = jsvalToString(args[0]);
-  unsigned int limit = jsvalToInt(args[1]);
+  std::string prefix = jsvalToString(_args_,0);
+  unsigned int limit = jsvalToInt(_args_,1);
   
   _pSBCManager->cdr().channelLimits().registerDialPrefix(prefix, limit);
   
-  return jsbool::New(true);
+  js_method_set_return_true();
 }
 
-jsval sbc_add_domain_channel_limit(const jsargs& args)
+JS_METHOD_IMPL(sbc_add_domain_channel_limit)
 {
-  if (!_pSBCManager || args.Length() < 2)
+  if (!_pSBCManager || _args_.Length() < 2)
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
   
-  std::string domain = jsvalToString(args[0]);
-  unsigned int limit = jsvalToInt(args[1]);
+  std::string domain = jsvalToString(_args_,0);
+  unsigned int limit = jsvalToInt(_args_,1);
   
   _pSBCManager->cdr().domainLimits().registerDomain(domain, limit);
   
-  return jsbool::New(true);
+  js_method_set_return_true();
 }
 
-jsval sbc_get_channel_count(const jsargs& args)
+JS_METHOD_IMPL(sbc_get_channel_count)
 {
-  if (!_pSBCManager || args.Length() < 1)
+  if (!_pSBCManager || _args_.Length() < 1)
   {
-    return jsint::New(0);
+    js_method_set_return_integer(0);
+    return;
   }
   
-  std::string prefix = jsvalToString(args[0]);
-  return jsint::New(_pSBCManager->cdr().channelLimits().getCallCount(prefix));
+  std::string prefix = jsvalToString(_args_,0);
+  js_method_set_return_integer(_pSBCManager->cdr().channelLimits().getCallCount(prefix));
 }
 
-jsval sbc_get_domain_channel_count(const jsargs& args)
+JS_METHOD_IMPL(sbc_get_domain_channel_count)
 {
-  if (!_pSBCManager || args.Length() < 1)
+  if (!_pSBCManager || _args_.Length() < 1)
   {
-    return jsint::New(0);
+    js_method_set_return_integer(0);
+    return;
   }
   
-  std::string domain = jsvalToString(args[0]);
-  return jsint::New(_pSBCManager->cdr().domainLimits().getCallCount(domain));
+  std::string domain = jsvalToString(_args_,0);
+  js_method_set_return_integer(_pSBCManager->cdr().domainLimits().getCallCount(domain));
 }
 
-jsval sbc_set_log_level(const jsargs& args)
+JS_METHOD_IMPL(sbc_set_log_level)
 {
-  if (args.Length() < 1)
+  if (_args_.Length() < 1)
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
   
-  std::string sLogLevel = jsvalToString(args[0]);;
+  std::string sLogLevel = jsvalToString(_args_,0);;
   if (sLogLevel.empty())
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
 
   if (sLogLevel == "fatal")//  A fatal error. The application will most likely terminate. This is the highest priority.
@@ -413,72 +447,77 @@ jsval sbc_set_log_level(const jsargs& args)
   }
   else
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
 
-  return jsbool::New(true);
+  js_method_set_return_true();
 }
 
 
-jsval sbc_ban_user_id(const jsargs& args)
+JS_METHOD_IMPL(sbc_ban_user_id)
 {
-  if (!_pSBCManager || args.Length() < 1)
+  if (!_pSBCManager || _args_.Length() < 1)
   {
-    return jsvoid();
+    js_method_set_return_undefined();
+    return;
   }
-  std::string val = jsvalToString(args[0]);
+  std::string val = jsvalToString(_args_,0);
   if (!val.empty())
   {
     _pSBCManager->autoBanRules().banUserById(val);
   }
   
-  return jsvoid();
+  js_method_set_return_undefined();
 }
 
-jsval sbc_ban_user_display(const jsargs& args)
+JS_METHOD_IMPL(sbc_ban_user_display)
 {
-  if (!_pSBCManager || args.Length() < 1)
+  if (!_pSBCManager || _args_.Length() < 1)
   {
-    return jsvoid();
+    js_method_set_return_undefined();
+    return;
   }
-  std::string val = jsvalToString(args[0]);
+  std::string val = jsvalToString(_args_,0);
   if (!val.empty())
   {
     _pSBCManager->autoBanRules().banUserByDisplayName(val);
   }
   
-  return jsvoid();
+  js_method_set_return_undefined();
 }
 
-jsval sbc_ban_user_agent(const jsargs& args)
+JS_METHOD_IMPL(sbc_ban_user_agent)
 {
-  if (!_pSBCManager || args.Length() < 1)
+  if (!_pSBCManager || _args_.Length() < 1)
   {
-    return jsvoid();
+    js_method_set_return_undefined();
+    return;
   }
-  std::string val = jsvalToString(args[0]);
+  std::string val = jsvalToString(_args_,0);
   if (!val.empty())
   {
     _pSBCManager->autoBanRules().banUserAgent(val);
   }
   
-  return jsvoid();
+  js_method_set_return_undefined();
 }
 
-jsval sbc_run(const jsargs& args)
+JS_METHOD_IMPL(sbc_run)
 {
-  return jsbool::New(_pSBCManager->run());
+  js_method_set_return_boolean(_pSBCManager->run());
 }
 
-jsval sbc_start_options_keep_alive(const jsargs& args)
+JS_METHOD_IMPL(sbc_start_options_keep_alive)
 {
-  if (!_pSBCManager || args.Length() < 1)
+  if (!_pSBCManager || _args_.Length() < 1)
   {
-    return jsbool::New(false);
+    js_method_set_return_false();
+    return;
   }
-  bool start = jsvalToBoolean(args[0]);
+  bool start = jsvalToBoolean(_args_,0);
   _pSBCManager->registerHandler()->pauseKeepAlive(!start);
-  return jsbool::New(true);
+  js_method_set_return_true();
 }
 
 } } } // OSS::SIP::SBC

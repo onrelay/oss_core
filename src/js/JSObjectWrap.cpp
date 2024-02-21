@@ -43,11 +43,13 @@ JSObjectWrap::~JSObjectWrap ( )
   
   if (!handle_.IsEmpty()) 
   {
-    assert(handle_.IsNearDeath());
+    //assert(handle_.IsNearDeath()); // Removed in V8 7.5 API
     handle_.ClearWeak();
-    handle_->SetInternalField(0, v8::Undefined());
-    handle_.Dispose();
-    handle_.Clear();
+    v8::Local<v8::Object> obj = v8::Local<v8::Object>::New(_pIsolate->getV8Isolate(),handle_);
+    obj->SetInternalField(0, v8::Undefined(_pIsolate->getV8Isolate()));
+    //handle_.Dispose(); Removed V8 3.24 API, use Reset
+    //handle_.Clear(); Removed V8 3.24 API, use Reset
+    handle_.Reset();
   }
 }
 
@@ -55,16 +57,16 @@ void JSObjectWrap::Wrap (v8::Handle<v8::Object> handle)
 {
   assert(handle_.IsEmpty());
   assert(handle->InternalFieldCount() > 0);
-  handle_ = v8::Persistent<v8::Object>::New(handle);
-  handle_->SetPointerInInternalField(0, this);
+  handle->SetAlignedPointerInInternalField(0, this);
+  handle_ = v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object>>(_pIsolate->getV8Isolate(),handle);
   MakeWeak();
 }
 
 
 void JSObjectWrap::MakeWeak (void) 
 {
-  handle_.MakeWeak(this, WeakCallback);
-  handle_.MarkIndependent();
+  handle_.SetWeak(this, WeakCallback, v8::WeakCallbackType::kParameter);
+  //handle_.MarkIndependent(); // Removed V8 7.6 API
 }
 
 /* Ref() marks the object as being attached to an event loop.
@@ -99,13 +101,13 @@ void JSObjectWrap::Unref()
 }
 
 
-void JSObjectWrap::WeakCallback (v8::Persistent<v8::Value> value, void *data) 
+void JSObjectWrap::WeakCallback(const v8::WeakCallbackInfo<JSObjectWrap>& data) 
 {
-  JSObjectWrap *obj = static_cast<JSObjectWrap*>(data);
-  assert(value == obj->handle_);
-  assert(!obj->refs_);
-  assert(value.IsNearDeath());
-  delete obj;
+  JSObjectWrap* objectWrap = data.GetParameter();
+  //assert(value == objectWrap->handle_);
+  assert(!objectWrap->refs_);
+  //assert(value.IsNearDeath()); // Removed in V8 7.5 API
+  delete objectWrap;
 }
 
 

@@ -13,6 +13,32 @@ AC_SUBST(OSS_CORE_VERSION_INFO)
 m4_include([config/ax_cxx_compile_stdcxx.m4])
 
 #
+# Common CXX and C Flags
+#
+OSS_CXX_C_FLAGS="-fmessage-length=0"
+#
+# Compiler warnings
+#
+OSS_CXX_WARNINGS="-Wall -Wformat -Wwrite-strings -Wpointer-arith -Wno-unused-result -Wno-strict-aliasing"
+OSS_C_WARNINGS="-Wall -Wnested-externs -Werror=return-type -Werror=uninitialized -Wno-pointer-sign -Wno-unused-function -Wno-shift-negative-value -Wno-format-extra-args"
+#
+# Additional CXX and C Flags
+#
+CXXFLAGS="$CXXFLAGS $OSS_CXX_C_FLAGS $OSS_CXX_WARNINGS"
+CFLAGS="$CFLAGS $OSS_CXX_C_FLAGS $OSS_C_WARNINGS -fno-omit-frame-pointer -fno-common -fsigned-char -fPIC"
+
+#
+# Set C++ 14 flag if supported by compiler
+#
+AX_CXX_COMPILE_STDCXX([14], [], [optional])
+
+#
+# Used by applications building oss_core inline.  In our case, we set it to nothing
+#
+AC_SUBST([OSS_CORE_ADDITIONAL_INCLUDES], [''])
+
+
+#
 # --disable-dep-check will simply display missing 
 # dependencies as warnings.  This is useful when you
 # simply need to generate the makefile for tasks that
@@ -464,30 +490,6 @@ OSS_CORE_SRCDIR=`pwd`
 AC_SUBST(OSS_CORE_SRCDIR)
 cd ${CURRENT_DIR}
 
-#
-# Common CXX and C Flags
-#
-OSS_CXX_C_FLAGS="-fmessage-length=0"
-#
-# Compiler warnings
-#
-OSS_CXX_WARNINGS="-Wall -Wformat -Wwrite-strings -Wpointer-arith -Wno-unused-result -Wno-strict-aliasing"
-OSS_C_WARNINGS="-Wall -Wnested-externs -Werror=return-type -Werror=uninitialized -Wno-pointer-sign -Wno-unused-function -Wno-shift-negative-value -Wno-format-extra-args"
-#
-# Additional CXX and C Flags
-#
-CXXFLAGS="$CXXFLAGS $OSS_CXX_C_FLAGS $OSS_CXX_WARNINGS"
-CFLAGS="$CFLAGS $OSS_CXX_C_FLAGS $OSS_C_WARNINGS -fno-omit-frame-pointer -fno-common -fsigned-char -fPIC"
-
-#
-# Set C++ 11 flag if supported by compiler
-#
-AX_CXX_COMPILE_STDCXX([11], [], [optional])
-
-#
-# Used by applications building oss_core inline.  In our case, we set it to nothing
-#
-AC_SUBST([OSS_CORE_ADDITIONAL_INCLUDES], [''])
 
 
 

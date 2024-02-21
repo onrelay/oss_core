@@ -12,35 +12,35 @@
 
 JS_METHOD_IMPL(__close)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_int32(0);
   int fd = js_method_arg_as_int32(0);
-  return JSInt32(::close(fd));
+  js_method_set_return_handle(js_method_int32(::close(fd)));
 }
 
 JS_METHOD_IMPL(__exit)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_int32(0);
   ::exit(js_method_arg_as_int32(0));
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(___exit)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_int32(0);
   ::_exit(js_method_arg_as_int32(0));
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(__write)
 {
-  js_method_arg_assert_size_gteq(2);
+  js_method_args_assert_size_gteq(2);
   js_method_arg_assert_int32(0);
   int32_t fd = js_method_arg_as_int32(0);
   uint32_t size = 0;
-  if (js_method_arg_length() == 3)
+  if (js_method_args_length() == 3)
   {
     js_method_arg_assert_uint32(2);
     size = js_method_arg_as_uint32(2);
@@ -49,56 +49,60 @@ JS_METHOD_IMPL(__write)
   if (js_method_arg_is_string(1))
   {
     std::string data = js_method_arg_as_std_string(1);
-    return JSInt32(::write(fd, data.data(), size ? size : data.size()));
+    js_method_set_return_handle(js_method_int32(::write(fd, data.data(), size ? size : data.size())));
+    return;
   }
   else if (js_method_arg_is_array(1))
   {
     JSArrayHandle args1 = js_method_arg_as_array(1);
     ByteArray bytes;
-    if (!js_int_array_to_byte_array(args1, bytes))
+    if (!js_int_array_to_byte_array(js_method_isolate(), args1, bytes))
     {
-      return JSInt32(-1);
+      js_method_set_return_handle(js_method_int32(-1));
+      return;
     }
-    return JSInt32(::write(fd, bytes.data(), size ? size : bytes.size()));
+    js_method_set_return_handle(js_method_int32(::write(fd, bytes.data(), size ? size : bytes.size())));
+    return;
   }
   else if (js_method_arg_is_buffer(1))
   {
-    BufferObject* pBuffer = js_method_arg_unwrap_object(BufferObject, 1);
-    return JSInt32(::write(fd, pBuffer->buffer().data(), size ? size : pBuffer->buffer().size()));
+    BufferObject* pBuffer = js_method_unwrap_object(BufferObject, 1);
+    js_method_set_return_handle(js_method_int32(::write(fd, pBuffer->buffer().data(), size ? size : pBuffer->buffer().size())));
+    return;
   }
   
-  return JSException("Invalid Argument");
+  js_method_throw("Invalid Argument");
 }
 
 JS_METHOD_IMPL(__cout)
 {
-  js_method_arg_declare_string(msg, 0);
+  js_method_declare_string(msg, 0);
   std::cout << msg;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(__oendl)
 {
   std::cout << std::endl;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(__cerr)
 {
-  js_method_arg_declare_string(msg, 0);
+  js_method_declare_string(msg, 0);
   std::cerr << msg;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(__eendl)
 {
   std::cerr << std::endl;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(__read)
 {
-  js_method_arg_assert_size_gteq(2);
+  js_method_args_assert_size_gteq(2);
   js_method_arg_assert_int32(0);
   js_method_arg_assert_uint32(1);
 
@@ -106,79 +110,83 @@ JS_METHOD_IMPL(__read)
   int32_t fd = js_method_arg_as_int32(0);
   uint32_t len = js_method_arg_as_uint32(1);
   
-  if (js_method_arg_length() == 2)
+  if (js_method_args_length() == 2)
   {
     //
     // Create a new Buffer
     //
-    JSValueHandle result = BufferObject::createNew(len);
-    BufferObject* pBuffer = js_unwrap_object(BufferObject, result->ToObject());
+    JSValueHandle result = BufferObject::createNew(js_method_isolate(), len);
+    BufferObject* pBuffer = js_unwrap_object(BufferObject, result->ToObject(js_method_context()).ToLocalChecked());
 
     ByteArray& buf = pBuffer->buffer();
     std::size_t ret = ::read(fd, buf.data(), buf.size());
     if (!ret)
     {
-      return JSUndefined();
+      js_method_set_return_undefined();
+      return;
     }
-    return result;
+    js_method_set_return_handle(result);
+    return;
   }
-  else if (js_method_arg_length() == 3)
+  else if (js_method_args_length() == 3)
   {
     //
     // Use the provided buffer
     //
     js_method_arg_assert_buffer(2);
-    BufferObject* pBuffer = js_method_arg_unwrap_object(BufferObject, 2);
+    BufferObject* pBuffer = js_method_unwrap_object(BufferObject, 2);
     if (len > pBuffer->buffer().size())
     {
-      js_throw("Length paramater exceeds buffer size");
+      js_method_throw("Length paramater exceeds buffer size");
     }
     ByteArray& buf = pBuffer->buffer();
     std::size_t ret = ::read(fd, buf.data(), len);
-    return JSInt32(ret);
+    js_method_set_return_handle(js_method_int32(ret));
+    return;
   }
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(__sleep)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_uint32(0);
   ::sleep(js_method_arg_as_uint32(0));
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(__gc)
 {
-  v8::V8::LowMemoryNotification();
-  while(!v8::V8::IdleNotification());
-  return JSUndefined();
+  js_method_isolate()->LowMemoryNotification();
+  //while(!v8::V8::IdleNotification());
+  // V8 6.5 API Changes: Do not use idle notification at all. This function  has been a no-op for almost all calls for a while now.
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(__setsid)
 {
-  return JSInt32(setsid());
+  js_method_set_return_handle(js_method_int32(setsid()));
 }
 
 JS_METHOD_IMPL(__getdtablesize)
 {
-  return JSInt32(getdtablesize());
+  js_method_set_return_handle(js_method_int32(getdtablesize()));
 }
 
 JS_METHOD_IMPL(__getpid)
 {
-  return JSInt32(getpid());
+  js_method_set_return_handle(js_method_int32(getpid()));
 }
 
 JS_METHOD_IMPL(__getppid)
 {
-  return JSInt32(getppid());
+  js_method_set_return_handle(js_method_int32(getppid()));
 }
 
 #if !defined(__APPLE__)
 JS_METHOD_IMPL(__thread_self)
 {
-  return JSUInt32(pthread_self());
+  js_method_set_return_handle(js_method_uint32(pthread_self()));
 }
 #endif
 
@@ -187,10 +195,11 @@ JS_METHOD_IMPL(__write_pid_file)
   std::string pidFile;
   bool exclusive = false;
   
-  int argc = js_method_arg_length();
+  int argc = js_method_args_length();
   if (argc < 1)
   {
-    return JSFalse;
+    js_method_set_return_false();
+    return;
   } 
   else if (argc == 1)
   {
@@ -205,12 +214,14 @@ JS_METHOD_IMPL(__write_pid_file)
   int handle = open(pidFile.c_str(), O_RDWR|O_CREAT, 0600);
   if (handle == -1)
   {
-    return JSFalse;
+    js_method_set_return_false();
+    return;  
   }
   
   if (exclusive && lockf(handle,F_TLOCK,0) == -1)
   {
-    return JSFalse;
+    js_method_set_return_false();
+    return;  
   }
   
   pid_t pid = getpid();
@@ -219,14 +230,15 @@ JS_METHOD_IMPL(__write_pid_file)
   sprintf(pidStr,"%d\n", pid);
   if (write(handle, pidStr, strlen(pidStr)) == -1)
   {
-    return JSFalse;
+    js_method_set_return_false();
+    return;  
   }
   
   if (!exclusive) {
     close(handle);
   }
   
-  return JSTrue;
+  js_method_set_return_true();
 }
 
 JS_EXPORTS_INIT()

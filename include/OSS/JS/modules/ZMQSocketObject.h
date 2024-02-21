@@ -31,20 +31,18 @@ public:
   typedef OSS::ZMQ::ZMQSocket Socket;
   ZMQSocketObject(Socket::SocketType type);
   virtual ~ZMQSocketObject();
+
+  JS_CONSTRUCTOR_DECLARE();
   
-  static v8::Persistent<v8::Function> _constructor;
-  static void Init(v8::Handle<v8::Object> exports);
-  static v8::Handle<v8::Value> New(const v8::Arguments& args);
-  
-  static v8::Handle<v8::Value> connect(const v8::Arguments& args);
-  static v8::Handle<v8::Value> bind(const v8::Arguments& args);
-  static v8::Handle<v8::Value> subscribe(const v8::Arguments& args);
-  static v8::Handle<v8::Value> publish(const v8::Arguments& args);
-  static v8::Handle<v8::Value> send(const v8::Arguments& args);
-  static v8::Handle<v8::Value> receive(const v8::Arguments& args);
-  static v8::Handle<v8::Value> close(const v8::Arguments& args);
-  static v8::Handle<v8::Value> getFd(const v8::Arguments& args);
-  
+  JS_METHOD_DECLARE(connect);
+  JS_METHOD_DECLARE(bind);
+  JS_METHOD_DECLARE(subscribe);
+  JS_METHOD_DECLARE(publish);
+  JS_METHOD_DECLARE(send);
+  JS_METHOD_DECLARE(receive);
+  JS_METHOD_DECLARE(close);
+  JS_METHOD_DECLARE(getFd);
+
   //
   // Helpers
   //

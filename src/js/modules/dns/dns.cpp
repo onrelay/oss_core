@@ -38,7 +38,7 @@ typedef OSS::BlockingQueue<DNSResolver*> ContextPool;
 typedef std::map<int, DNSContext*> ContextMap;
 static ContextPool _pool;
 static ContextMap _map;
-JSPersistentFunctionHandle* _work_cb = 0;
+JSCopyablePersistentFunctionHandle* _work_cb = 0;
 pollfd pfds[POOL_SIZE];
 
 static void initialize_pool(uint32_t size)
@@ -69,303 +69,340 @@ static void relinquish_context(DNSResolver* resolver)
 }
 
 template <typename T>
-void call_result_callback(const T& record, const JSLocalValueHandle& result, void* userData)
+void call_result_callback( v8::Isolate* isolate, const T& record, const JSLocalValueHandle& result, void* userData)
 {
-  JSPersistentFunctionHandle* cb = (JSPersistentFunctionHandle*)userData;
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+  v8::Local<v8::Object> global = context->Global();
+
+  JSCopyablePersistentFunctionHandle* persistentCallback = (JSCopyablePersistentFunctionHandle*)userData;
   
-  JSLocalValueHandle common = JSObject();
-  common->ToObject()->Set(JSLiteral("cname"), JSString(record.getCName().c_str()));
-  common->ToObject()->Set(JSLiteral("qname"), JSString(record.getQName().c_str()));
-  common->ToObject()->Set(JSLiteral("ttl"), JSUInt32(record.getTTL()));
+  JSLocalValueHandle common = JSObject(isolate);
+  common->ToObject(context).ToLocalChecked()->Set(context, JSString(isolate,"cname"), JSString(isolate,record.getCName().c_str()));
+  common->ToObject(context).ToLocalChecked()->Set(context, JSString(isolate,"qname"), JSString(isolate,record.getQName().c_str()));
+  common->ToObject(context).ToLocalChecked()->Set(context, JSString(isolate,"ttl"), JSUint32(isolate,record.getTTL()));
   
   JSLocalArgumentVector args;
   args.push_back(result);
   args.push_back(common);
+
+  JSFunctionHandle callback = persistentCallback->Get(isolate);
   
-  JSValueHandle obj = (*cb)->Get(JSLiteral("resolver"));
-  DNSResolver* resolver = js_unwrap_pointer_from_local_object<DNSResolver>(obj->ToObject());
+  JSValueHandle obj = callback->Get(context, JSString(isolate, "resolver")).ToLocalChecked();
+
+  DNSResolver* resolver = js_unwrap_pointer_from_local_object<DNSResolver>(obj->ToObject(context).ToLocalChecked());
   relinquish_context(resolver);
   
-  if (obj->ToObject()->HasOwnProperty(JSLiteral("timerId")))
+  if (obj->ToObject(context).ToLocalChecked()->HasOwnProperty(context,JSString(isolate,"timerId")).ToChecked())
   {
-    JSValueHandle timerId = obj->ToObject()->Get(JSLiteral("timerId"));
-    Async::clear_timer(timerId->ToInt32()->Value());
+    JSValueHandle timerId = obj->ToObject(context).ToLocalChecked()->Get(context,JSString(isolate,"timerId")).ToLocalChecked();
+    Async::clear_timer(timerId->Int32Value(context).ToChecked());
   }
   
-  (*cb)->Call(js_get_global(), args.size(), args.data());
-  cb->Dispose();
-  delete cb;
+  callback->Call(context, global, args.size(), args.data());
+  persistentCallback->Reset();
+  delete persistentCallback;
   
-  (*_work_cb)->Call(js_get_global(), 0, 0);
+  JSFunctionHandle workCallback = _work_cb->Get(isolate);
+
+  workCallback->Call(context, global, 0, 0);
 }
 
 static void on_a_lookup(const DNSARecordV4& record, void* userData)
 {
+  v8::Isolate* isolate = js_get_v8_isolate();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+
   const DNSAddressList& records = record.getRecords();
-  JSLocalValueHandle result = JSArray(records.size());
+  JSLocalValueHandle result = JSArray(isolate, records.size());
   std::size_t index = 0;
   for (DNSAddressList::const_iterator iter = records.begin(); iter != records.end(); iter++)
   {
-    result->ToObject()->Set(index++, JSString(*iter));
+    result->ToObject(context).ToLocalChecked()->Set(context, index++, JSString(isolate, *iter));
   }
-  call_result_callback<DNSARecordV4>(record, result, userData);
+  call_result_callback<DNSARecordV4>(isolate, record, result, userData);
 }
 
 static void on_aaaa_lookup(const DNSARecordV6& record, void* userData)
 {
+  v8::Isolate* isolate = js_get_v8_isolate();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+
   const DNSAddressList& records = record.getRecords();
-  JSLocalValueHandle result = JSArray(records.size());
+  JSLocalValueHandle result = JSArray(isolate, records.size());
   std::size_t index = 0;
   for (DNSAddressList::const_iterator iter = records.begin(); iter != records.end(); iter++)
   {
-    result->ToObject()->Set(index++, JSString(*iter));
+    result->ToObject(context).ToLocalChecked()->Set(context, index++, JSString(isolate, *iter));
   }
-  call_result_callback<DNSARecordV6>(record, result, userData);
+  call_result_callback<DNSARecordV6>(isolate, record, result, userData);
 }
 
 static void on_srv_lookup(const DNSSRVRecord& record, void* userData)
 {
+  v8::Isolate* isolate = js_get_v8_isolate();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+
   const DNSSRVRecordList& records = record.getRecords();
-  JSLocalValueHandle result = JSArray(records.size());
+  JSLocalValueHandle result = JSArray(isolate,records.size());
   std::size_t index = 0;
   for (DNSSRVRecordList::const_iterator iter = records.begin(); iter != records.end(); iter++)
   {
-    JSObjectHandle srv = JSObject();
-    srv->Set(JSLiteral("priority"), JSInt32(iter->priority));
-    srv->Set(JSLiteral("weight"), JSInt32(iter->weight));
-    srv->Set(JSLiteral("port"), JSInt32(iter->port));
-    srv->Set(JSLiteral("name"), JSString(iter->name));
-    result->ToObject()->Set(index++, srv);
+    JSObjectHandle srv = JSObject(isolate);
+    srv->Set(context,JSString(isolate,"priority"), JSInt32(isolate,iter->priority));
+    srv->Set(context,JSString(isolate,"weight"), JSInt32(isolate,iter->weight));
+    srv->Set(context,JSString(isolate,"port"), JSInt32(isolate,iter->port));
+    srv->Set(context,JSString(isolate,"name"), JSString(isolate,iter->name));
+    result->ToObject(context).ToLocalChecked()->Set(context, index++, srv);
   }
-  call_result_callback<DNSSRVRecord>(record, result, userData);
+  call_result_callback<DNSSRVRecord>(isolate, record, result, userData);
 }
 
 static void on_ptr_lookup(const DNSPTRRecord& record, void* userData)
 {
+  v8::Isolate* isolate = js_get_v8_isolate();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+
   const DNSPTRRecordList& records = record.getRecords();
-  JSLocalValueHandle result = JSArray(records.size());
+  JSLocalValueHandle result = JSArray(isolate,records.size());
   std::size_t index = 0;
   for (DNSPTRRecordList::const_iterator iter = records.begin(); iter != records.end(); iter++)
   {
-    result->ToObject()->Set(index++, JSString(*iter));
+    result->ToObject(context).ToLocalChecked()->Set(context, index++, JSString(isolate,*iter));
   }
-  call_result_callback<DNSPTRRecord>(record, result, userData);
+  call_result_callback<DNSPTRRecord>(isolate, record, result, userData);
 }
 
 static void on_txt_lookup(const DNSTXTRecord& record, void* userData)
 {
+  v8::Isolate* isolate = js_get_v8_isolate();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+
   const DNSTXTRecordList& records = record.getRecords();
-  JSLocalValueHandle result = JSArray(records.size());
+  JSLocalValueHandle result = JSArray(isolate,records.size());
   std::size_t index = 0;
   for (DNSTXTRecordList::const_iterator iter = records.begin(); iter != records.end(); iter++)
   {
-    result->ToObject()->Set(index++, JSString(*iter));
+    result->ToObject(context).ToLocalChecked()->Set(context, index++, JSString(isolate,*iter));
   }
-  call_result_callback<DNSTXTRecord>(record, result, userData);
+  call_result_callback<DNSTXTRecord>(isolate, record, result, userData);
 }
 
 static void on_naptr_lookup(const DNSNAPTRRecord& record, void* userData)
 {
+  v8::Isolate* isolate = js_get_v8_isolate();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+
   const DNSNAPTRRecordList& records = record.getRecords();
-  JSLocalValueHandle result = JSArray(records.size());
+  JSLocalValueHandle result = JSArray(isolate,records.size());
   std::size_t index = 0;
   for (DNSNAPTRRecordList::const_iterator iter = records.begin(); iter != records.end(); iter++)
   {
-    JSObjectHandle srv = JSObject();
-    srv->Set(JSLiteral("order"), JSInt32(iter->order));
-    srv->Set(JSLiteral("preference"), JSInt32(iter->preference));
-    srv->Set(JSLiteral("flags"), JSString(iter->flags));
-    srv->Set(JSLiteral("service"), JSString(iter->service));
-    srv->Set(JSLiteral("regexp"), JSString(iter->regexp));
-    srv->Set(JSLiteral("replacement"), JSString(iter->flags));
-    result->ToObject()->Set(index++, srv);
+    JSObjectHandle srv = JSObject(isolate);
+    srv->Set(context, JSString(isolate,"order"), JSInt32(isolate,iter->order));
+    srv->Set(context, JSString(isolate,"preference"), JSInt32(isolate,iter->preference));
+    srv->Set(context, JSString(isolate,"flags"), JSString(isolate,iter->flags));
+    srv->Set(context, JSString(isolate,"service"), JSString(isolate,iter->service));
+    srv->Set(context, JSString(isolate,"regexp"), JSString(isolate,iter->regexp));
+    srv->Set(context, JSString(isolate,"replacement"), JSString(isolate,iter->flags));
+    result->ToObject(context).ToLocalChecked()->Set(context, index++, srv);
   }
-  call_result_callback<DNSNAPTRRecord>(record, result, userData);
+  call_result_callback<DNSNAPTRRecord>(isolate, record, result, userData);
 }
 
 static void on_mx_lookup(const DNSMXRecord& record, void* userData)
 {
+  v8::Isolate* isolate = js_get_v8_isolate();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+
   const DNSMXRecordList& records = record.getRecords();
-  JSLocalValueHandle result = JSArray(records.size());
+  JSLocalValueHandle result = JSArray(isolate,records.size());
   std::size_t index = 0;
   for (DNSMXRecordList::const_iterator iter = records.begin(); iter != records.end(); iter++)
   {
-    JSObjectHandle srv = JSObject();
-    srv->Set(JSLiteral("priority"), JSInt32(iter->priority));
-    srv->Set(JSLiteral("name"), JSString(iter->name));
-    result->ToObject()->Set(index++, srv);
+    JSObjectHandle srv = JSObject(isolate);
+    srv->Set(context,JSString(isolate,"priority"), JSInt32(isolate,iter->priority));
+    srv->Set(context,JSString(isolate,"name"), JSString(isolate,iter->name));
+    result->ToObject(context).ToLocalChecked()->Set(context,index++, srv);
   }
-  call_result_callback<DNSMXRecord>(record, result, userData);
+  call_result_callback<DNSMXRecord>(isolate, record, result, userData);
 }
 
 JS_METHOD_IMPL(__lookup_a)
 {
   static DNSARecordV4CB resolver_cb = boost::bind(on_a_lookup, _1, _2);
   
-  js_method_arg_assert_size_eq(3);
+  js_method_args_assert_size_eq(3);
   js_method_arg_assert_string(0);
   js_method_arg_assert_function(1);
   js_method_arg_assert_object(2);
   
   std::string query = js_method_arg_as_std_string(0);
-  JSPersistentFunctionHandle* cb = new JSPersistentFunctionHandle; 
-  *cb = js_method_arg_as_persistent_function(1);
+  JSCopyablePersistentFunctionHandle* persistentCallback = new JSCopyablePersistentFunctionHandle; 
+  *persistentCallback = js_method_arg_as_persistent_function(1);
+  JSFunctionHandle callback = persistentCallback->Get(js_method_isolate());
   JSLocalObjectHandle obj = js_method_arg_as_object(2);
   DNSResolver* resolver = js_unwrap_pointer_from_local_object<DNSResolver>(obj);
-  (*cb)->Set(JSLiteral("resolver"), obj);
+  callback->Set(js_method_context(),js_method_string("resolver"), obj);
   
-  resolver->resolveA4(query, 0, resolver_cb, cb);
-  return JSInt32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0));
+  resolver->resolveA4(query, 0, resolver_cb, persistentCallback);
+  js_method_set_return_handle(js_method_int32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0)));
 }
 
 JS_METHOD_IMPL(__lookup_aaaa)
 {
   static DNSARecordV6CB resolver_cb = boost::bind(on_aaaa_lookup, _1, _2);
 
-  js_method_arg_assert_size_eq(3);
+  js_method_args_assert_size_eq(3);
   js_method_arg_assert_string(0);
   js_method_arg_assert_function(1);
   js_method_arg_assert_object(2);
   
   std::string query = js_method_arg_as_std_string(0);
-  JSPersistentFunctionHandle* cb = new JSPersistentFunctionHandle; 
-  *cb = js_method_arg_as_persistent_function(1);
+  JSCopyablePersistentFunctionHandle* persistentCallback = new JSCopyablePersistentFunctionHandle; 
+  *persistentCallback = js_method_arg_as_persistent_function(1);
+  JSFunctionHandle callback = persistentCallback->Get(js_method_isolate());
   JSLocalObjectHandle obj = js_method_arg_as_object(2);
   DNSResolver* resolver = js_unwrap_pointer_from_local_object<DNSResolver>(obj);
-  (*cb)->Set(JSLiteral("resolver"), obj);
+  callback->Set(js_method_context(), js_method_string("resolver"), obj);
   
-  resolver->resolveA6(query, 0, resolver_cb, cb);
-  return JSInt32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0));
+  resolver->resolveA6(query, 0, resolver_cb, persistentCallback);
+  js_method_set_return_handle(js_method_int32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0)));
 }
 
 JS_METHOD_IMPL(__lookup_srv)
 {
    static DNSSRVRecordCB resolver_cb = boost::bind(on_srv_lookup, _1, _2);
 
-  js_method_arg_assert_size_eq(3);
+  js_method_args_assert_size_eq(3);
   js_method_arg_assert_string(0);
   js_method_arg_assert_function(1);
   js_method_arg_assert_object(2);
   
   std::string query = js_method_arg_as_std_string(0);
-  JSPersistentFunctionHandle* cb = new JSPersistentFunctionHandle; 
-  *cb = js_method_arg_as_persistent_function(1);
+  JSCopyablePersistentFunctionHandle* persistentCallback = new JSCopyablePersistentFunctionHandle; 
+  *persistentCallback = js_method_arg_as_persistent_function(1);
+  JSFunctionHandle callback = persistentCallback->Get(js_method_isolate());
   JSLocalObjectHandle obj = js_method_arg_as_object(2);
   DNSResolver* resolver = js_unwrap_pointer_from_local_object<DNSResolver>(obj);
-  (*cb)->Set(JSLiteral("resolver"), obj);
+  callback->Set(js_method_context(), js_method_string("resolver"), obj);
   
-  resolver->resolveSRV(query, 0, resolver_cb, cb);
-  return JSInt32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0));
+  resolver->resolveSRV(query, 0, resolver_cb, persistentCallback);
+  js_method_set_return_handle(js_method_int32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0)));
 }
 
 JS_METHOD_IMPL(__lookup_ptr4)
 {
   static DNSPTRRecordCB resolver_cb = boost::bind(on_ptr_lookup, _1, _2);
 
-  js_method_arg_assert_size_eq(3);
+  js_method_args_assert_size_eq(3);
   js_method_arg_assert_string(0);
   js_method_arg_assert_function(1);
   js_method_arg_assert_object(2);
   
   std::string query = js_method_arg_as_std_string(0);
-  JSPersistentFunctionHandle* cb = new JSPersistentFunctionHandle; 
-  *cb = js_method_arg_as_persistent_function(1);
+  JSCopyablePersistentFunctionHandle* persistentCallback = new JSCopyablePersistentFunctionHandle; 
+  *persistentCallback = js_method_arg_as_persistent_function(1);
+  JSFunctionHandle callback = persistentCallback->Get(js_method_isolate());
   JSLocalObjectHandle obj = js_method_arg_as_object(2);
   DNSResolver* resolver = js_unwrap_pointer_from_local_object<DNSResolver>(obj);
-  (*cb)->Set(JSLiteral("resolver"), obj);
+  callback->Set(js_method_context(), js_method_string("resolver"), obj);
   
-  resolver->resolvePTR4(query, resolver_cb, cb);
-  return JSInt32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0));
+  resolver->resolvePTR4(query, resolver_cb, persistentCallback);
+  js_method_set_return_handle(js_method_int32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0)));
 }
 
 JS_METHOD_IMPL(__lookup_ptr6)
 {
   static DNSPTRRecordCB resolver_cb = boost::bind(on_ptr_lookup, _1, _2);
 
-  js_method_arg_assert_size_eq(3);
+  js_method_args_assert_size_eq(3);
   js_method_arg_assert_string(0);
   js_method_arg_assert_function(1);
   js_method_arg_assert_object(2);
   
   std::string query = js_method_arg_as_std_string(0);
-  JSPersistentFunctionHandle* cb = new JSPersistentFunctionHandle; 
-  *cb = js_method_arg_as_persistent_function(1);
+  JSCopyablePersistentFunctionHandle* persistentCallback = new JSCopyablePersistentFunctionHandle; 
+  *persistentCallback = js_method_arg_as_persistent_function(1);
+  JSFunctionHandle callback = persistentCallback->Get(js_method_isolate());
   JSLocalObjectHandle obj = js_method_arg_as_object(2);
   DNSResolver* resolver = js_unwrap_pointer_from_local_object<DNSResolver>(obj);
-  (*cb)->Set(JSLiteral("resolver"), obj);
+  callback->Set(js_method_context(), js_method_string("resolver"), obj);
   
-  resolver->resolvePTR6(query, resolver_cb, cb);
-  return JSInt32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0));
+  resolver->resolvePTR6(query, resolver_cb, persistentCallback);
+  js_method_set_return_handle(js_method_int32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0)));
 }
 
 JS_METHOD_IMPL(__lookup_naptr)
 {
   static DNSNAPTRRecordCB resolver_cb = boost::bind(on_naptr_lookup, _1, _2);
 
-  js_method_arg_assert_size_eq(3);
+  js_method_args_assert_size_eq(3);
   js_method_arg_assert_string(0);
   js_method_arg_assert_function(1);
   js_method_arg_assert_object(2);
   
   std::string query = js_method_arg_as_std_string(0);
-  JSPersistentFunctionHandle* cb = new JSPersistentFunctionHandle; 
-  *cb = js_method_arg_as_persistent_function(1);
+  JSCopyablePersistentFunctionHandle* persistentCallback = new JSCopyablePersistentFunctionHandle; 
+  *persistentCallback = js_method_arg_as_persistent_function(1);
+  JSFunctionHandle callback = persistentCallback->Get(js_method_isolate());
   JSLocalObjectHandle obj = js_method_arg_as_object(2);
   DNSResolver* resolver = js_unwrap_pointer_from_local_object<DNSResolver>(obj);
-  (*cb)->Set(JSLiteral("resolver"), obj);
+  callback->Set(js_method_context(), js_method_string("resolver"), obj);
   
-  resolver->resolveNAPTR(query, 0, resolver_cb, cb);
-  return JSInt32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0));
+  resolver->resolveNAPTR(query, 0, resolver_cb, persistentCallback);
+  js_method_set_return_handle(js_method_int32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0)));
 }
 
 JS_METHOD_IMPL(__lookup_txt)
 {
   static DNSTXTRecordCB resolver_cb = boost::bind(on_txt_lookup, _1, _2);
 
-  js_method_arg_assert_size_eq(3);
+  js_method_args_assert_size_eq(3);
   js_method_arg_assert_string(0);
   js_method_arg_assert_function(1);
   js_method_arg_assert_object(2);
   
   std::string query = js_method_arg_as_std_string(0);
-  JSPersistentFunctionHandle* cb = new JSPersistentFunctionHandle; 
-  *cb = js_method_arg_as_persistent_function(1);
+  JSCopyablePersistentFunctionHandle* persistentCallback = new JSCopyablePersistentFunctionHandle; 
+  *persistentCallback = js_method_arg_as_persistent_function(1);
+  JSFunctionHandle callback = persistentCallback->Get(js_method_isolate());
   JSLocalObjectHandle obj = js_method_arg_as_object(2);
   DNSResolver* resolver = js_unwrap_pointer_from_local_object<DNSResolver>(obj);
-  (*cb)->Set(JSLiteral("resolver"), obj);
+  callback->Set(js_method_context(), js_method_string("resolver"), obj);
   
-  resolver->resolveTXT(query, 0, DNS_C_ANY, resolver_cb, cb);
-  return JSInt32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0));
+  resolver->resolveTXT(query, 0, DNS_C_ANY, resolver_cb, persistentCallback);
+  js_method_set_return_handle(js_method_int32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0)));
 }
 
 JS_METHOD_IMPL(__lookup_mx)
 {
   static DNSMXRecordCB resolver_cb = boost::bind(on_mx_lookup, _1, _2);
 
-  js_method_arg_assert_size_eq(3);
+  js_method_args_assert_size_eq(3);
   js_method_arg_assert_string(0);
   js_method_arg_assert_function(1);
   js_method_arg_assert_object(2);
   
   std::string query = js_method_arg_as_std_string(0);
-  JSPersistentFunctionHandle* cb = new JSPersistentFunctionHandle; 
-  *cb = js_method_arg_as_persistent_function(1);
+  JSCopyablePersistentFunctionHandle* persistentCallback = new JSCopyablePersistentFunctionHandle; 
+  *persistentCallback = js_method_arg_as_persistent_function(1);
+  JSFunctionHandle callback = persistentCallback->Get(js_method_isolate());
   JSLocalObjectHandle obj = js_method_arg_as_object(2);
   DNSResolver* resolver = js_unwrap_pointer_from_local_object<DNSResolver>(obj);
-  (*cb)->Set(JSLiteral("resolver"), obj);
+  callback->Set(js_method_context(), js_method_string("resolver"), obj);
   
-  resolver->resolveMX(query, 0, resolver_cb, cb);
-  return JSInt32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0));
+  resolver->resolveMX(query, 0, resolver_cb, persistentCallback);
+  js_method_set_return_handle(js_method_int32(dns_timeouts(resolver->context()->context(),MAX_TIMEOUT_SEC, 0)));
 }
 
 JS_METHOD_IMPL(__relinquish_context)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_object(0);
   JSLocalObjectHandle obj = js_method_arg_as_object(0);
   DNSResolver* resolver = js_unwrap_pointer_from_local_object<DNSResolver>(obj);
   relinquish_context(resolver);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(__acquire_context)
@@ -375,23 +412,23 @@ JS_METHOD_IMPL(__acquire_context)
   _pool.dequeue(resolver);
   if (!resolver)
   {
-    js_throw("Unable to acquire context");
+    js_method_throw("Unable to acquire context");
   }
   
-  JSObjectHandle obj = js_wrap_pointer_to_local_object(resolver);
-  obj->Set(JSLiteral("fd"), JSUInt32(resolver->context()->getSocketFd()));
+  JSObjectHandle obj = js_method_wrap_pointer_to_local_object(resolver);
+  obj->Set(js_method_context(), js_method_string("fd"), js_method_uint32(resolver->context()->getSocketFd()));
   
-  return obj;
+  js_method_set_return_handle(obj);
 }
 
 JS_METHOD_IMPL(__get_context_count)
 {
-  return JSUInt32(_pool.size());
+  js_method_set_return_handle(js_method_uint32(_pool.size()));
 }
 
 JS_METHOD_IMPL(__process_io_events)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_uint32(0);
   uint32_t fd = js_method_arg_as_uint32(0);
   
@@ -400,29 +437,30 @@ JS_METHOD_IMPL(__process_io_events)
   {
     dns_ioevent(iter->second->context(), 0);
   }
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(__set_work_callback)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_function(0);
-  _work_cb = new JSPersistentFunctionHandle; 
+  _work_cb = new JSCopyablePersistentFunctionHandle; 
   *_work_cb = js_method_arg_as_persistent_function(0);
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(__get_next_context_timeout)
 {
-  js_method_arg_assert_size_eq(1);
+  js_method_args_assert_size_eq(1);
   js_method_arg_assert_object(0);
   JSLocalObjectHandle obj = js_method_arg_as_object(0);
   DNSResolver* resolver = js_unwrap_pointer_from_local_object<DNSResolver>(obj);
   if (!resolver)
   {
-    return JSInt32(-1);
+    js_method_set_return_handle(js_method_int32(-1));
+    return;
   }
-  return JSInt32(dns_timeouts(resolver->context()->context(), MAX_TIMEOUT_SEC, 0));
+  js_method_set_return_handle(js_method_int32(dns_timeouts(resolver->context()->context(), MAX_TIMEOUT_SEC, 0)));
 }
 
 

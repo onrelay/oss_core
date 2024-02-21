@@ -116,8 +116,8 @@ JS_CONSTRUCTOR_IMPL(ResipClientSubscriptionHandler)
   ResipClientSubscriptionHandler* object = new ResipClientSubscriptionHandler();
   object->_handler = new client_subscription_handler(object);
   object->_isolate = OSS::JS::JSIsolate::getIsolate();
-  object->Wrap(js_method_arg_self());
-  return js_method_arg_self();
+  object->Wrap(js_method_self());
+  return js_method_self();
 }
 
 ResipClientSubscriptionHandler::ResipClientSubscriptionHandler() :
@@ -182,65 +182,65 @@ ResipClientSubscriptionHandler::~ResipClientSubscriptionHandler()
 
 JS_METHOD_IMPL(ResipClientSubscriptionHandler::handleOnUpdatePending)
 {
-  js_method_arg_declare_self(ResipClientSubscriptionHandler, self);
-  js_method_arg_declare_persistent_function(handler, 0);
+  js_method_declare_self(ResipClientSubscriptionHandler, self);
+  js_method_declare_persistent_function(handler, 0);
   self->_handleOnUpdatePending = new JSPersistentFunctionHandle;
   *(self->_handleOnUpdatePending) = handler;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipClientSubscriptionHandler::handleOnUpdateActive)
 {
-  js_method_arg_declare_self(ResipClientSubscriptionHandler, self);
-  js_method_arg_declare_persistent_function(handler, 0);
+  js_method_declare_self(ResipClientSubscriptionHandler, self);
+  js_method_declare_persistent_function(handler, 0);
   self->_handleOnUpdateActive = new JSPersistentFunctionHandle;
   *(self->_handleOnUpdateActive) = handler;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipClientSubscriptionHandler::handleOnUpdateExtension)
 {
-  js_method_arg_declare_self(ResipClientSubscriptionHandler, self);
-  js_method_arg_declare_persistent_function(handler, 0);
+  js_method_declare_self(ResipClientSubscriptionHandler, self);
+  js_method_declare_persistent_function(handler, 0);
   self->_handleOnUpdateExtension = new JSPersistentFunctionHandle;
   *(self->_handleOnUpdateExtension) = handler;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipClientSubscriptionHandler::handleOnTerminated)
 {
-  js_method_arg_declare_self(ResipClientSubscriptionHandler, self);
-  js_method_arg_declare_persistent_function(handler, 0);
+  js_method_declare_self(ResipClientSubscriptionHandler, self);
+  js_method_declare_persistent_function(handler, 0);
   self->_handleOnTerminated = new JSPersistentFunctionHandle;
   *(self->_handleOnTerminated) = handler;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipClientSubscriptionHandler::handleOnNewSubscription)
 {
-  js_method_arg_declare_self(ResipClientSubscriptionHandler, self);
-  js_method_arg_declare_persistent_function(handler, 0);
+  js_method_declare_self(ResipClientSubscriptionHandler, self);
+  js_method_declare_persistent_function(handler, 0);
   self->_handleOnNewSubscription = new JSPersistentFunctionHandle;
   *(self->_handleOnNewSubscription) = handler;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipClientSubscriptionHandler::handleOnNotifyNotReceived)
 {
-  js_method_arg_declare_self(ResipClientSubscriptionHandler, self);
-  js_method_arg_declare_persistent_function(handler, 0);
+  js_method_declare_self(ResipClientSubscriptionHandler, self);
+  js_method_declare_persistent_function(handler, 0);
   self->_handleOnNotifyNotReceived = new JSPersistentFunctionHandle;
   *(self->_handleOnNotifyNotReceived) = handler;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 JS_METHOD_IMPL(ResipClientSubscriptionHandler::handleOnFlowTerminated)
 {
-  js_method_arg_declare_self(ResipClientSubscriptionHandler, self);
-  js_method_arg_declare_persistent_function(handler, 0);
+  js_method_declare_self(ResipClientSubscriptionHandler, self);
+  js_method_declare_persistent_function(handler, 0);
   self->_handleOnFlowTerminated = new JSPersistentFunctionHandle;
   *(self->_handleOnFlowTerminated) = handler;
-  return JSUndefined();
+  js_method_set_return_undefined();
 }
 
 void ResipClientSubscriptionHandler::onUpdatePendingIsolated(void* user_data)
@@ -250,13 +250,13 @@ void ResipClientSubscriptionHandler::onUpdatePendingIsolated(void* user_data)
   if (_handleOnUpdatePending)
   {
     JSLocalValueHandle result = JSObject();
-    result->ToObject()->Set(JSLiteral("key"), JSString(data->key.c_str()));
-    result->ToObject()->Set(JSLiteral("eventBody"), JSString(data->eventBody.c_str()));
-    result->ToObject()->Set(JSLiteral("isOutOfOrder"), JSBoolean(data->isOutOfOrder));
+    result->ToObject()->Set(JSString("key"), JSString(data->key.c_str()));
+    result->ToObject()->Set(JSString("eventBody"), JSString(data->eventBody.c_str()));
+    result->ToObject()->Set(JSString("isOutOfOrder"), JSBoolean(data->isOutOfOrder));
 
     JSLocalArgumentVector args;
     args.push_back(result);
-    (*_handleOnUpdatePending)->Call(js_get_global(), args.size(), args.data());
+    (*_handleOnUpdatePending)->Call(js_get_v8_global(), args.size(), args.data());
   }
   delete data;
 }
@@ -268,13 +268,13 @@ void ResipClientSubscriptionHandler::onUpdateActiveIsolated(void* user_data)
   if (_handleOnUpdateActive)
   {
     JSLocalValueHandle result = JSObject();
-    result->ToObject()->Set(JSLiteral("key"), JSString(data->key.c_str()));
-    result->ToObject()->Set(JSLiteral("eventBody"), JSString(data->eventBody.c_str()));
-    result->ToObject()->Set(JSLiteral("isOutOfOrder"), JSBoolean(data->isOutOfOrder));
+    result->ToObject()->Set(JSString("key"), JSString(data->key.c_str()));
+    result->ToObject()->Set(JSString("eventBody"), JSString(data->eventBody.c_str()));
+    result->ToObject()->Set(JSString("isOutOfOrder"), JSBoolean(data->isOutOfOrder));
 
     JSLocalArgumentVector args;
     args.push_back(result);
-    (*_handleOnUpdateActive)->Call(js_get_global(), args.size(), args.data());
+    (*_handleOnUpdateActive)->Call(js_get_v8_global(), args.size(), args.data());
   }
   delete data;
 }
@@ -286,13 +286,13 @@ void ResipClientSubscriptionHandler::onUpdateExtensionIsolated(void* user_data)
   if (_handleOnUpdateExtension)
   {
     JSLocalValueHandle result = JSObject();
-    result->ToObject()->Set(JSLiteral("key"), JSString(data->key.c_str()));
-    result->ToObject()->Set(JSLiteral("eventBody"), JSString(data->eventBody.c_str()));
-    result->ToObject()->Set(JSLiteral("isOutOfOrder"), JSBoolean(data->isOutOfOrder));
+    result->ToObject()->Set(JSString("key"), JSString(data->key.c_str()));
+    result->ToObject()->Set(JSString("eventBody"), JSString(data->eventBody.c_str()));
+    result->ToObject()->Set(JSString("isOutOfOrder"), JSBoolean(data->isOutOfOrder));
 
     JSLocalArgumentVector args;
     args.push_back(result);
-    (*_handleOnUpdateExtension)->Call(js_get_global(), args.size(), args.data());
+    (*_handleOnUpdateExtension)->Call(js_get_v8_global(), args.size(), args.data());
   }
   delete data;
 }
@@ -304,10 +304,10 @@ void ResipClientSubscriptionHandler::onTerminatedIsolated(void* user_data)
   if (_handleOnTerminated)
   {
     JSLocalValueHandle result = JSObject();
-    result->ToObject()->Set(JSLiteral("key"), JSString(data->key.c_str()));
+    result->ToObject()->Set(JSString("key"), JSString(data->key.c_str()));
     JSLocalArgumentVector args;
     args.push_back(result);
-    (*_handleOnTerminated)->Call(js_get_global(), args.size(), args.data());
+    (*_handleOnTerminated)->Call(js_get_v8_global(), args.size(), args.data());
   }
   delete data;
 }
@@ -354,10 +354,10 @@ void ResipClientSubscriptionHandler::onNewSubscriptionIsolated(void* user_data)
   if (_handleOnNewSubscription)
   {
     JSLocalValueHandle result = JSObject();
-    result->ToObject()->Set(JSLiteral("key"), JSString(data->key.c_str()));
+    result->ToObject()->Set(JSString("key"), JSString(data->key.c_str()));
     JSLocalArgumentVector args;
     args.push_back(result);
-    (*_handleOnNewSubscription)->Call(js_get_global(), args.size(), args.data());
+    (*_handleOnNewSubscription)->Call(js_get_v8_global(), args.size(), args.data());
   }
   delete data;
 }
@@ -377,10 +377,10 @@ void ResipClientSubscriptionHandler::onNotifyNotReceivedIsolated(void* user_data
   if (_handleOnNotifyNotReceived)
   {
     JSLocalValueHandle result = JSObject();
-    result->ToObject()->Set(JSLiteral("key"), JSString(data->key.c_str()));
+    result->ToObject()->Set(JSString("key"), JSString(data->key.c_str()));
     JSLocalArgumentVector args;
     args.push_back(result);
-    (*_handleOnNotifyNotReceived)->Call(js_get_global(), args.size(), args.data());
+    (*_handleOnNotifyNotReceived)->Call(js_get_v8_global(), args.size(), args.data());
   }
   delete data;
 }
